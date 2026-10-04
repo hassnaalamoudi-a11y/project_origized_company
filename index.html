@@ -1,0 +1,2913 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مؤسسة بايوني للحلول الأمنية</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Tajawal:wght@400;500;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
+    rel="stylesheet">
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <!-- طبقة قاعدة البيانات -->
+  <script src="supabase-db.js"></script>
+  <link rel="icon"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='8' y='55' width='8' height='8' fill='%230b4d3a'/%3E%3Crect x='20' y='47' width='8' height='8' fill='%230b4d3a'/%3E%3Crect x='32' y='39' width='8' height='8' fill='%2314945f'/%3E%3Crect x='44' y='31' width='8' height='8' fill='%2314945f'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="design-system.css">
+</head>
+
+<body>
+
+  <div id="loginScreen">
+    <div class="login-box">
+      <div class="gov-logo" style="justify-content:center">
+        <svg width="52" height="40" viewBox="0 0 60 40">
+          <g fill="#0b4d3a">
+            <rect x="2" y="28" width="7" height="7" />
+            <rect x="12" y="28" width="7" height="7" />
+            <rect x="2" y="18" width="7" height="7" />
+            <rect x="12" y="18" width="7" height="7" />
+            <rect x="2" y="8" width="7" height="7" />
+          </g>
+          <g fill="#14945f">
+            <rect x="24" y="28" width="7" height="7" />
+            <rect x="34" y="20" width="7" height="7" />
+            <rect x="44" y="12" width="7" height="7" />
+            <rect x="52" y="4" width="5" height="5" />
+          </g>
+        </svg>
+        <div>مؤسسة بايوني<br><small style="letter-spacing:0">للحلول الأمنية</small></div>
+      </div>
+      <h2>لإدارة المشاريع</h2>
+      <p>سجّل الدخول للمتابعة — نظام رسمي للمشاريع والمستخلصات</p>
+      <input id="loginNo" type="number" min="0" step="1" inputmode="numeric" placeholder="رقم المستخدم"
+        style="direction:ltr;text-align:center" oninput="fillLoginName()" onkeydown="if(event.key==='Enter')login()">
+      <input id="loginUser" placeholder="اسم المستخدم" oninput="checkLoginLink()"
+        onkeydown="if(event.key==='Enter')login()">
+      <div style="position:relative">
+        <input id="loginPass" type="password" placeholder="كلمة المرور" style="padding-left:48px"
+          onkeydown="if(event.key==='Enter')login()">
+        <button type="button" class="eye-btn" onclick="togglePassView('loginPass',this)"
+          title="إظهار / إخفاء كلمة المرور" aria-label="إظهار أو إخفاء كلمة المرور">👁</button>
+      </div>
+      <button onclick="login()">تسجيل الدخول</button>
+      <p id="loginErr" style="color:red;font-size:13px"></p>
+    </div>
+  </div>
+
+  <div id="app">
+    <div class="govbar">
+      <div class="gov-logo">
+        <svg width="46" height="36" viewBox="0 0 60 40">
+          <g fill="#0b4d3a">
+            <rect x="2" y="28" width="7" height="7" />
+            <rect x="12" y="28" width="7" height="7" />
+            <rect x="2" y="18" width="7" height="7" />
+            <rect x="12" y="18" width="7" height="7" />
+            <rect x="2" y="8" width="7" height="7" />
+          </g>
+          <g fill="#14945f">
+            <rect x="24" y="28" width="7" height="7" />
+            <rect x="34" y="20" width="7" height="7" />
+            <rect x="44" y="12" width="7" height="7" />
+            <rect x="52" y="4" width="5" height="5" />
+          </g>
+        </svg>
+        <div>مؤسسة بايوني<small style="letter-spacing:0">للحلول الأمنية</small></div>
+      </div>
+      <div class="navtabs" id="menu">
+        <button data-p="dashboard" onclick="go('dashboard')">الرئيسية | Home</button>
+        <button data-p="projects" onclick="go('projects')">المشاريع | Projects</button>
+        <button data-p="moves" onclick="go('moves')">حركة المشروع | Movements</button>
+        <button data-p="expenses" onclick="go('expenses')">المصاريف | Expenses</button>
+        <button data-p="reports" onclick="go('reports')">التقارير | Reports</button>
+        <button data-p="users" id="usersBtn" onclick="go('users')">المستخدمون | Users</button>
+        <button data-p="log" id="logBtn" onclick="go('log')">النسخ والتتبع | Backup & Log</button>
+      </div>
+      <div class="gov-left">
+        <span id="whoLabel" style="color:var(--primary);font-weight:bold"></span>
+        <button class="bell-btn" id="serviceTypesNavBtn" onclick="openServiceTypesModal()"
+          title="إدارة أنواع الخدمات (الحساب الرئيسي)" style="font-size:17px;display:none">🏷️</button>
+        <button class="bell-btn" id="dbSettingsBtn" onclick="openDbSettingsModal()"
+          title="إعدادات الربط السحابي Supabase" style="font-size:17px;display:none">☁️</button>
+        <button class="bell-btn" id="passBtn" onclick="openPassModal()" title="تغيير كلمة السر"
+          style="font-size:17px">🔑</button>
+        <button class="bell-btn" id="notificationBtn" onclick="toggleNotifications()" title="التنبيهات">🔔<span
+            class="bell-badge" id="notificationCount">0</span></button>
+        <span style="color:#999">English</span>
+        <button class="btn-out" onclick="logout()">خروج</button>
+      </div>
+    </div>
+
+    <div class="hero" id="heroBox">
+      <div>
+        <h1 id="pageTitle">مشاريع</h1>
+        <p>إدارة مشاريع مؤسسة بايوني للحلول الأمنية — تابع المشاريع والمقاولين، الفواتير الشهرية، المستحقات والتحصيل من
+          مكان واحد.</p>
+        <div class="crumb">🏠 الرئيسية &lt; <span id="crumbName">مشاريع</span></div>
+      </div>
+      <div class="hero-stats">
+        <div class="hstat">
+          <div style="font-size:24px">💼</div>
+          <div class="n" id="heroCount">0</div>
+          <div class="l">مشروع وفرصة عمل</div>
+        </div>
+        <div class="hstat">
+          <div style="font-size:24px">🧾</div>
+          <div class="n" id="heroValue">0</div>
+          <div class="l">القيمة التقديرية للمشاريع</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+
+      <div class="page" id="pg-dashboard">
+        <div class="cards">
+          <div class="card">
+            <div class="t">عدد المشاريع | Projects</div>
+            <div class="v" id="stProjects">0</div>
+          </div>
+          <div class="card">
+            <div class="t">قيمة العقود (بعد الضريبة) | Contracts</div>
+            <div class="v" id="stContracts">0</div>
+          </div>
+          <div class="card">
+            <div class="t">إجمالي المحصّل | Collected</div>
+            <div class="v" id="stGot">0</div>
+          </div>
+          <div class="card">
+            <div class="t">مستحق غير محصّل | Due</div>
+            <div class="v" id="stDue">0</div>
+          </div>
+          <div class="card card-link" onclick="openExpensesDetail()"
+            onkeydown="if(event.key==='Enter'||event.key===' ')openExpensesDetail()" role="button" tabindex="0"
+            title="اضغط لعرض تفاصيل المصاريف">
+            <div class="t">المصاريف | Expenses</div>
+            <div class="v" id="stExp">0</div>
+            <button class="card-view" type="button" onclick="event.stopPropagation();openExpensesDetail()">🔎 عرض
+              التفاصيل</button>
+          </div>
+          <div class="card" title="عدد فواتير المشروع التي لم تسجل بعد">
+            <div class="t">الفواتير المتبقية | Remaining Invoices</div>
+            <div class="v" id="stRemainingInvoices">0</div><small class="card-note">غير مسجلة من كامل المشروع</small>
+          </div>
+          <div class="card" title="عدد فترات المشروع التي لم تكتمل فواتيرها أو تحصيلها بعد">
+            <div class="t">الأقساط المتبقية | Remaining Installments</div>
+            <div class="v" id="stRemainingInstallments">0</div><small class="card-note">فترات لم تكتمل بعد</small>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>ملخص المشاريع — الاسم / العميل / نوع الخدمة / البداية / النهاية / القيمة / القسط</h3>
+          <div class="toolbar" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input class="search" id="searchDashboardProjects" style="flex:1"
+              placeholder="🔍 بحث في المشاريع الرئيسية..." oninput="renderDash()">
+            <button type="button" class="col-toggle-btn" id="dashColToggleBtn" onclick="toggleServiceTypeColumn()" title="إظهار أو إخفاء عمود نوع الخدمة">
+              👁️ عمود الخدمة: <span id="dashSvcColState">ظاهر</span>
+            </button>
+          </div>
+          <div class="tw">
+            <table>
+              <thead>
+                <tr>
+                  <th>اسم المشروع<br><small>Project</small></th>
+                  <th>العميل<br><small>Client</small></th>
+                  <th class="col-svc-type">نوع الخدمة<br><small>Service Type</small></th>
+                  <th>بداية المشروع<br><small>Start</small></th>
+                  <th>نهاية المشروع<br><small>End</small></th>
+                  <th>قيمة المشروع بعد الضريبة<br><small>Value after VAT — اضغط للتفاصيل</small></th>
+                  <th>مدة الضمان<br><small>Warranty</small></th>
+                  <th>القسط / الفترة<br><small>Installment</small></th>
+                  <th>الحالة<br><small>Status</small></th>
+                </tr>
+              </thead>
+              <tbody id="dashRecent"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="page" id="pg-projects">
+        <div class="panel" id="projectFormPanel">
+          <div
+            style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px">
+            <h3 id="projectFormTitle" style="margin:0">تسجيل مشروع جديد</h3>
+            <button class="btn btn-p" id="projectToggleBtn" onclick="openNewProjectForm()">➕ تسجيل مشروع جديد</button>
+          </div>
+          <div id="projectFormBody" style="display:none">
+            <input type="hidden" id="p_id">
+            <div class="grid2">
+              <div><label>اسم المشروع * | Project Name</label><input id="p_name" placeholder="مثال: خالد"></div>
+              <div><label>رقم المشروع * | Project No.</label><input id="p_num" placeholder="مثال: 101"></div>
+              <div><label>اسم العميل | Client Name</label><input id="p_client" placeholder="مثال: شركة النخبة"></div>
+              <div style="grid-column: 1 / -1; background: var(--surface-subtle); padding: 12px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle)">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                  <label style="margin:0;font-weight:700;display:flex;align-items:center;gap:6px">
+                    🏷️ نوع الخدمة <span class="optional-pill">(اختياري)</span> <small style="color:var(--muted);font-weight:normal">| Service Type (Optional)</small>
+                  </label>
+                  <div style="display:flex;gap:6px">
+                    <button type="button" id="quickAddServiceBtn" class="btn-s"
+                      style="padding:2px 8px;font-size:11px;display:none" onclick="openServiceTypesModal()"
+                      title="إدارة وإضافة أنواع الخدمات (الحساب الرئيسي)">⚙️ إدارة الخدمات</button>
+                    <button type="button" id="quickAddServiceInlineBtn" class="btn btn-p"
+                      style="padding:3px 9px;font-size:11.5px;display:none;white-space:nowrap"
+                      onclick="quickAddServiceTypePrompt()" title="إضافة نوع خدمة جديد فوراً (الحساب الرئيسي)">➕ جديد</button>
+                  </div>
+                </div>
+                <div class="service-type-pills-container" id="serviceTypePillsContainer">
+                  <button type="button" class="svc-pill" data-val="خدمة صيانة" onclick="selectServiceTypePill('خدمة صيانة')">
+                    <span class="pill-icon">🛠️</span>
+                    <span class="pill-label">خدمة صيانة</span>
+                  </button>
+                  <button type="button" class="svc-pill" data-val="خدمة تركيب" onclick="selectServiceTypePill('خدمة تركيب')">
+                    <span class="pill-icon">⚡</span>
+                    <span class="pill-label">خدمة تركيب</span>
+                  </button>
+                  <button type="button" class="svc-pill" data-val="خدمة صيانة وتركيب" onclick="selectServiceTypePill('خدمة صيانة وتركيب')">
+                    <span class="pill-icon">🛠️⚡</span>
+                    <span class="pill-label">صيانة وتركيب</span>
+                  </button>
+                  <button type="button" class="svc-pill" data-val="غير محدد" onclick="selectServiceTypePill('غير محدد')">
+                    <span class="pill-icon">⚪</span>
+                    <span class="pill-label">بدون تحديد (اختياري)</span>
+                  </button>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+                  <small style="color:var(--muted);white-space:nowrap;font-size:12px">أو اختر من القائمة المسجلة:</small>
+                  <select id="p_service_type" style="flex:1" onchange="syncServiceTypeFromSelect()"></select>
+                </div>
+              </div>
+              <div><label>تاريخ بداية المشروع * (يوم / شهر / سنة ميلادي)</label><input class="date-input"
+                  data-iso="p_start" type="text" inputmode="numeric" dir="ltr" maxlength="10" autocomplete="off"
+                  placeholder="يوم/شهر/سنة" oninput="onDateInput(this)" onblur="onDateInput(this)"><small
+                  class="date-hint" id="p_start_hint"></small><input type="hidden" id="p_start"></div>
+              <div><label>تاريخ نهاية المشروع * (يوم / شهر / سنة ميلادي)</label><input class="date-input"
+                  data-iso="p_end" type="text" inputmode="numeric" dir="ltr" maxlength="10" autocomplete="off"
+                  placeholder="يوم/شهر/سنة" oninput="onDateInput(this)" onblur="onDateInput(this)"><small
+                  class="date-hint" id="p_end_hint"></small><input type="hidden" id="p_end"></div>
+              <div><label>مدة المشروع (شهر)</label><input id="p_months" type="number" min="0"
+                  placeholder="تحسب تلقائياً بالأشهر" readonly></div>
+              <div><label>مدة الضمان (شهر)</label><input id="p_warranty" type="number" min="0" step="1"
+                  placeholder="مثال: 12"></div>
+              <div><label>مبلغ المشروع قبل الضريبة *</label><input id="p_before" type="number" min="0" step="0.01"
+                  oninput="calcAfter()"></div>
+              <div><label>نسبة الضريبة %</label><input id="p_tax" type="number" value="15" min="0" max="100" step="0.01"
+                  oninput="calcAfter()"></div>
+              <div><label>المبلغ بعد الضريبة</label><input id="p_after" readonly
+                  style="background:#f0faf4;font-weight:bold"></div>
+              <div><label>🧾 نظام الفواتير / التحصيل *</label><select id="p_cycle" onchange="toggleMonthly()">
+                  <option value="شهري">شهري (كل شهر)</option>
+                  <option value="كل شهرين">كل شهرين</option>
+                  <option value="كل 3 شهور">كل 3 شهور</option>
+                  <option value="كل 4 شهور">كل 4 شهور</option>
+                  <option value="ربع سنوي">ربع سنوي (كل 3 شهور)</option>
+                  <option value="نصف سنوي">نصف سنوي (كل 6 شهور)</option>
+                  <option value="سنوي">سنوي (كل 12 شهر)</option>
+                  <option value="دفعة واحدة">دفعة واحدة</option>
+                  <option value="حسب الإنجاز">حسب الإنجاز</option>
+                </select></div>
+              <div id="monthlyWrap"><label id="monthlyLabel">💰 المبلغ المستحق لكل فترة * (تلقائي)</label><input
+                  id="p_monthly" type="number" min="0" step="0.01" placeholder="مثال: 100000" readonly
+                  title="يُحسب تلقائياً: المبلغ بعد الضريبة ÷ عدد الأقساط"></div>
+              <div><label>💳 طريقة التحصيل الأساسية *</label><select id="p_collect">
+                  <option>تحويل بنكي</option>
+                  <option>نقدي</option>
+                  <option>شيك</option>
+                  <option>شبكة</option>
+                  <option>آجل 30 يوم</option>
+                  <option>آجل 60 يوم</option>
+                </select></div>
+              <div><label>🏷️ حالة المشروع *</label><select id="p_status">
+                  <option value="تحت العمل">تحت العمل 🚧</option>
+                  <option value="منجز">تم إنجاز المشروع ✅</option>
+                </select></div>
+            </div>
+            <div class="toolbar" style="margin-top:12px">
+              <button class="btn btn-p" onclick="saveProject()">💾 حفظ المشروع</button>
+              <button class="btn btn-g" onclick="resetProjectForm()">جديد</button>
+              <button class="btn btn-g" onclick="toggleProjectForm()">إخفاء ✖</button>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="toolbar" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input class="search" id="searchProjects" style="flex:1"
+              placeholder="🔍 بحث بالاسم أو الرقم أو العميل..." oninput="renderProjects()">
+            <button type="button" class="col-toggle-btn" id="projectsColToggleBtn" onclick="toggleServiceTypeColumn()" title="إظهار أو إخفاء عمود نوع الخدمة">
+              👁️ عمود الخدمة: <span id="projectsSvcColState">ظاهر</span>
+            </button>
+          </div>
+          <div class="tw">
+            <table class="projects-table">
+              <thead>
+                <tr>
+                  <th>الرقم<br><small>No.</small></th>
+                  <th>المشروع<br><small>Project</small></th>
+                  <th>العميل<br><small>Client</small></th>
+                  <th class="col-svc-type">نوع الخدمة<br><small>Service Type</small></th>
+                  <th>المدة<br><small>Duration</small></th>
+                  <th>البداية<br><small>Start</small></th>
+                  <th>النهاية<br><small>End</small></th>
+                  <th>بعد الضريبة<br><small>After VAT</small></th>
+                  <th>مدة الضمان<br><small>Warranty</small></th>
+                  <th>الفواتير المتبقية<br><small>Remaining Invoices</small></th>
+                  <th>الأقساط المتبقية<br><small>Remaining Installments</small></th>
+                  <th>نظام الفواتير / التحصيل<br><small>Billing / Collection</small></th>
+                  <th>حالة المشروع<br><small>Status</small></th>
+                  <th>إجراءات<br><small>Actions</small></th>
+                </tr>
+              </thead>
+              <tbody id="projectsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="page" id="pg-moves">
+        <div class="panel sched" id="movementProjectPanel">
+          <div class="detail-head">
+            <div>
+              <h3>حركة المشاريع</h3>
+              <p style="font-size:13px;color:#3c554b;margin:4px 0 0">تفاصيل المشاريع والفواتير المستحقة. اضغط إدخال
+                الفاتورة لعرض فواتير المشروع، أو اضغط المبالغ المستحقة لعرض التفاصيل المالية.</p>
+            </div>
+          </div>
+          <div class="toolbar" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input class="search" id="searchMovementProjects" style="flex:1"
+              placeholder="🔍 بحث برقم المشروع أو اسم المشروع أو العميل..." oninput="renderMovementProjects()">
+            <button type="button" class="col-toggle-btn" id="movesColToggleBtn" onclick="toggleServiceTypeColumn()" title="إظهار أو إخفاء عمود نوع الخدمة">
+              👁️ عمود الخدمة: <span id="movesSvcColState">ظاهر</span>
+            </button>
+          </div>
+          <div class="tw">
+            <table>
+              <thead>
+                <tr>
+                  <th>الرقم<br><small>No.</small></th>
+                  <th>المشروع<br><small>Project</small></th>
+                  <th>العميل<br><small>Client</small></th>
+                  <th class="col-svc-type">نوع الخدمة<br><small>Service Type</small></th>
+                  <th>المدة<br><small>Duration</small></th>
+                  <th>البداية<br><small>Start</small></th>
+                  <th>النهاية<br><small>End</small></th>
+                  <th>عدد الفواتير المستحقة<br><small>Due Invoices</small></th>
+                  <th>عدد المبالغ المستحقة<br><small>Due Amount Count</small></th>
+                  <th>المبالغ المستحقة<br><small>Due Amounts</small></th>
+                  <th>الإجراءات<br><small>Actions</small></th>
+                </tr>
+              </thead>
+              <tbody id="movementProjectsBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="panel sched" style="margin-top:18px">
+          <h3>🟢 ملخص الفواتير المسجلة لكل مشروع</h3>
+          <p style="font-size:13px;color:#3c554b;margin:0 0 10px">يظهر لكل مشروع عدد الفواتير المسجلة وعدد المبالغ
+            المحصلة. اضغط على العدد لعرض تفاصيل المبالغ المحصلة فقط.</p>
+          <div class="toolbar"><button class="btn btn-p" onclick="openCollectedGroupsModal()">عرض جميع المبالغ حسب
+              المشروع</button></div>
+          <div class="tw">
+            <table>
+              <thead>
+                <tr>
+                  <th>الرقم<br><small>No.</small></th>
+                  <th>المشروع<br><small>Project</small></th>
+                  <th>العميل<br><small>Client</small></th>
+                  <th class="col-svc-type">نوع الخدمة<br><small>Service Type</small></th>
+                  <th>عدد الفواتير المسجلة<br><small>Registered Invoices</small></th>
+                  <th>عدد المبالغ المحصلة<br><small>Collected Count</small></th>
+                  <th>الإجراء<br><small>Action</small></th>
+                </tr>
+              </thead>
+              <tbody id="movementRecordedBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="panel sched" style="margin-top:18px">
+          <h3>📄 حالة الفواتير</h3>
+          <p style="font-size:13px;color:#3c554b;margin:0 0 10px">الفواتير غير المستحقة تظهر باللون المحايد، والفواتير
+            المستحقة غير المسجلة تظهر باللون الأحمر، والفواتير التي تم تسجيل استحقاقها تظهر باللون الأخضر.</p>
+          <div class="tw">
+            <table>
+              <thead>
+                <tr>
+                  <th>المشروع<br><small>Project</small></th>
+                  <th>الفترة<br><small>Period</small></th>
+                  <th>الفاتورة<br><small>Invoice</small></th>
+                  <th>المبلغ<br><small>Amount</small></th>
+                  <th>تاريخ الاستحقاق<br><small>Due Date</small></th>
+                  <th>الحالة<br><small>Status</small></th>
+                  <th>طريقة الدفع<br><small>Payment</small></th>
+                  <th>الملاحظات<br><small>Notes</small></th>
+                  <th>الإجراء<br><small>Action</small></th>
+                </tr>
+              </thead>
+              <tbody id="movementInvoiceStatusBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- فورم إدخال الفاتورة (مخفي افتراضياً) -->
+      <div class="panel" id="moveFormPanel" style="display:none">
+        <h3 id="moveFormTitle">تسجيل / تعديل الفاتورة | Invoice Entry</h3>
+        <div id="moveHint" style="background:var(--primary-50);border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px;display:none"></div>
+        <input type="hidden" id="m_id">
+        <input type="hidden" id="m_periodKey">
+        <div class="grid2">
+          <div><label>المشروع *</label><select id="m_project" onchange="onMoveProjectChange()"></select></div>
+          <div><label>نوع الحركة *</label><select id="m_type"><option>فاتورة</option><option>مستخلص</option><option>دفعة</option></select></div>
+          <div><label>رقم الفاتورة *</label><input id="m_inv" dir="ltr" placeholder="مثال: 101-2026-01"></div>
+          <div><label>المبلغ *</label><input id="m_amount" type="number" min="0" step="0.01" placeholder="0.00"></div>
+          <div><label>تاريخ الإصدار</label><input id="m_issue" type="date"></div>
+          <div><label>تاريخ الاستحقاق</label><input id="m_due" type="date"></div>
+          <div><label>حالة الفاتورة</label><select id="m_invDue"><option>غير مستحقة</option><option>مستحقة</option><option>مدفوعة</option></select></div>
+          <div><label>حالة التحصيل</label><select id="m_money"><option>غير مستحق</option><option>مستحق</option><option>محصل</option></select></div>
+          <div><label>فترة الفاتورة (شهر-سنة)</label><input id="m_month" type="month" dir="ltr"></div>
+          <div><label>طريقة التحصيل</label><select id="m_collect"><option>تحويل بنكي</option><option>نقدي</option><option>شيك</option><option>شبكة</option><option>آجل 30 يوم</option><option>آجل 60 يوم</option></select></div>
+        </div>
+        <div style="margin-top:8px"><label>ملاحظات</label><input id="m_desc" placeholder="ملاحظات الفاتورة"></div>
+        <div class="toolbar" style="margin-top:12px">
+          <button class="btn btn-p" onclick="saveMove()">💾 حفظ الفاتورة</button>
+          <button class="btn btn-g" onclick="resetMoveForm()">جديد</button>
+          <button class="btn btn-d" onclick="resetMoveForm()">إلغاء ✖</button>
+        </div>
+      </div>
+
+      <!-- فورم تسجيل المستحقات (مخفي افتراضياً) -->
+      <div class="panel" id="receivableFormPanel" style="display:none">
+        <h3 id="receivableFormTitle">💰 سجل مستحقات الفاتورة</h3>
+        <input type="hidden" id="r_moveId">
+        <input type="hidden" id="r_periodKey">
+        <div class="grid2">
+          <div><label>المشروع</label><input id="r_project" readonly></div>
+          <div><label>الفترة / القسط</label><input id="r_period" readonly></div>
+          <div><label>الفاتورة *</label><select id="r_move" onchange="fillReceivableMove()"></select></div>
+          <div><label>المبلغ المستحق *</label><input id="r_amount" type="number" min="0" step="0.01"></div>
+          <div><label>الحالة</label><select id="r_status"><option value="مستحق">مستحق 💰</option><option value="محصل">محصل ✔</option></select></div>
+          <div><label>اسم البنك</label><input id="r_bank" placeholder="مثال: مصرف الرافدين"></div>
+          <div><label>تاريخ التحويل</label><input id="r_transferDate" type="date" dir="ltr"></div>
+        </div>
+        <div style="margin-top:8px"><label>ملاحظات الاستحقاق</label><textarea id="r_note" placeholder="ملاحظات الاستحقاق أو الحوالة..."></textarea></div>
+        <div class="toolbar" style="margin-top:12px">
+          <button class="btn btn-p" onclick="saveReceivable()">💾 حفظ الاستحقاق</button>
+          <button class="btn btn-g" onclick="resetReceivableForm()">إلغاء ✖</button>
+        </div>
+      </div>
+
+      <!-- عرض المستحقات (مخفي افتراضياً) -->
+      <div class="panel sched" id="receivablesViewPanel" style="display:none;margin-top:18px">
+        <h3>📅 جدول الفواتير والمستحقات</h3>
+        <div id="receivablesViewSummary" style="margin-bottom:12px;font-size:14px"></div>
+        <div class="tw"><table>
+          <thead><tr>
+            <th>الفترة<br><small>Period</small></th>
+            <th>الاستحقاق<br><small>Due Date</small></th>
+            <th>المبلغ المتوقع<br><small>Expected</small></th>
+            <th>الفاتورة<br><small>Invoice</small></th>
+            <th>المبلغ المستحق<br><small>Due Amount</small></th>
+            <th>الحالة<br><small>Status</small></th>
+            <th>الإجراء<br><small>Action</small></th>
+          </tr></thead>
+          <tbody id="receivableScheduleBody"></tbody>
+        </table></div>
+        <h4 style="margin:16px 0 8px">الفواتير المسجلة لهذا المشروع</h4>
+        <div class="tw"><table>
+          <thead><tr>
+            <th>الشهر<br><small>Month</small></th>
+            <th>الفاتورة<br><small>Invoice</small></th>
+            <th>المبلغ<br><small>Amount</small></th>
+            <th>المستحق<br><small>Due</small></th>
+            <th>الحالة<br><small>Status</small></th>
+            <th>البنك / التحويل<br><small>Bank/Transfer</small></th>
+            <th>الإجراء<br><small>Action</small></th>
+          </tr></thead>
+          <tbody id="receivableInvoicesBody"></tbody>
+        </table></div>
+        <div class="tw" style="margin-top:16px"><table>
+          <thead><tr>
+            <th>المشروع<br><small>Project</small></th>
+            <th>الشهر<br><small>Month</small></th>
+            <th>الفاتورة<br><small>Invoice</small></th>
+            <th>المبلغ<br><small>Amount</small></th>
+            <th>المستحق<br><small>Due</small></th>
+            <th>تاريخ الاستحقاق<br><small>Due Date</small></th>
+            <th>حالة الفاتورة<br><small>Inv Status</small></th>
+            <th>الحالة الكاملة<br><small>Status</small></th>
+            <th>البنك<br><small>Bank</small></th>
+            <th>الحالة الذاتية<br><small>Auto Status</small></th>
+            <th>الإجراء<br><small>Action</small></th>
+          </tr></thead>
+          <tbody id="movesBody"></tbody>
+        </table></div>
+        <div class="toolbar" style="margin-top:12px">
+          <select id="filterMoveProject" onchange="renderMoves()" style="max-width:240px"><option value="">كل المشاريع</option></select>
+          <input class="search" id="searchMoves" placeholder="🔍 بحث في الفواتير..." oninput="renderMoves()" style="max-width:200px">
+          <button class="btn btn-g" onclick="resetMoveForm()">إغلاق</button>
+        </div>
+      </div>
+
+      <!-- جدول الجدولة (مخفي، يفتح من الموديل) -->
+      <div style="display:none">
+        <select id="schedProject"></select>
+        <tbody id="schedBody"></tbody>
+      </div>
+
+      <div class="page" id="pg-expenses">
+        <div class="panel" id="expFormPanel" style="display:none">
+          <h3 id="expFormTitle">تفاصيل المصروف</h3>
+          <input type="hidden" id="e_id">
+          <div class="grid2">
+            <div><label>المشروع (مرتبط) *</label><select id="e_project" onchange="fillMoveLink()"></select></div>
+            <div><label>مرتبط بفاتورة (اختياري)</label><select id="e_move">
+                <option value="">— بدون ربط —</option>
+              </select></div>
+            <div><label>البند</label><select id="e_cat">
+                <option>رواتب</option>
+                <option>مواد</option>
+                <option>معدات</option>
+                <option>نقل ومواصلات</option>
+                <option>مقاول باطن</option>
+                <option>أخرى</option>
+              </select></div>
+            <div><label>المبلغ *</label><input id="e_amount" type="number" min="0" step="0.01"></div>
+            <div><label>التاريخ الميلادي (يوم/شهر/سنة)</label><input id="e_date" class="date-input"
+                data-iso="e_date_iso" type="text" inputmode="numeric" dir="ltr" maxlength="10" autocomplete="off"
+                placeholder="يوم/شهر/سنة" oninput="onDateInput(this)" onblur="onDateInput(this)"><small
+                class="date-hint" id="e_date_iso_hint"></small><input id="e_date_iso" type="hidden"></div>
+          </div>
+          <div style="margin-top:8px"><label>الوصف</label><input id="e_desc" placeholder="مثال: شراء حديد"></div>
+          <div class="toolbar" style="margin-top:12px">
+            <button class="btn btn-p" onclick="saveExpense()">💾 حفظ المصروف</button>
+            <button class="btn btn-g" onclick="resetExpForm()">جديد</button>
+            <button class="btn btn-d" onclick="closeExpenseForm()">إلغاء ✖</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="toolbar"><button class="btn btn-p" id="expenseAddBtn" onclick="openExpenseForm()">➕ إضافة
+              مصروف</button><select id="filterExpProject" onchange="renderExpenses()" style="max-width:240px">
+              <option value="">كل المشاريع</option>
+            </select></div>
+          <div class="tw">
+            <table>
+              <thead>
+                <tr>
+                  <th>المشروع<br><small>Project</small></th>
+                  <th>البند<br><small>Category</small></th>
+                  <th>الوصف<br><small>Description</small></th>
+                  <th>مرتبط بفاتورة<br><small>Linked Inv.</small></th>
+                  <th>المبلغ<br><small>Amount</small></th>
+                  <th>التاريخ<br><small>Date</small></th>
+                  <th>إجراءات<br><small>Actions</small></th>
+                </tr>
+              </thead>
+              <tbody id="expensesBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="page" id="pg-reports">
+        <div class="report-kpis" id="reportKpis"></div>
+        <div class="panel">
+          <h3>تقرير تفاصيل المشاريع — ربح أم خسارة</h3>
+          <div class="toolbar">
+            <input class="search" id="searchReports" placeholder="🔍 بحث بالاسم أو الرقم أو العميل..."
+              oninput="renderReports()" style="max-width:280px">
+            <select id="filterReportServiceType" onchange="renderReports()" style="max-width:170px">
+              <option value="">كل أنواع الخدمات</option>
+            </select>
+            <select id="filterReportStatus" onchange="renderReports()" style="max-width:150px">
+              <option value="">كل الحالات</option>
+              <option value="منجز">منجز فقط</option>
+              <option value="تحت العمل">تحت العمل فقط</option>
+            </select>
+            <select id="filterReportResult" onchange="renderReports()" style="max-width:150px">
+              <option value="">كل النتائج</option>
+              <option value="رابح">رابح فقط</option>
+              <option value="خاسر">خاسر فقط</option>
+            </select>
+            <button class="btn btn-g" onclick="resetReportSearch()">🔄 إعادة تعيين</button>
+            <span id="reportCount" style="font-size:13px;color:var(--muted)"></span>
+          </div>
+          <div class="tw">
+            <table class="reports-table">
+              <thead>
+                <tr>
+                  <th>المشروع<br><small>Project</small></th>
+                  <th>العميل<br><small>Client</small></th>
+                  <th class="col-svc-type">نوع الخدمة<br><small>Service Type</small></th>
+                  <th>حالة المشروع<br><small>Status</small></th>
+                  <th>مدة الضمان<br><small>Warranty</small></th>
+                  <th>العقد بعد الضريبة<br><small>Contract</small></th>
+                  <th>الفواتير<br><small>Invoices</small></th>
+                  <th>المحصّل<br><small>Collected</small></th>
+                  <th>مستحق غير محصّل<br><small>Due</small></th>
+                  <th>المصاريف<br><small>Expenses</small></th>
+                  <th>الفرق بعد المصاريف<br><small>Contract − Expenses</small></th>
+                  <th>النتيجة<br><small>Result</small></th>
+                </tr>
+              </thead>
+              <tbody id="reportsBody"></tbody>
+            </table>
+          </div>
+          <p style="font-size:13px;color:var(--muted)">الفرق = إجمالي المشروع بعد الضريبة − المصاريف. النتيجة ربح إذا
+            كان الفرق موجباً، خسارة إذا كان سالباً.</p>
+        </div>
+        <div class="panel sched" style="margin-top:18px">
+          <h3>📊 رسوم بيانية — العقد مقابل المصاريف</h3>
+          <div id="reportChart" class="report-chart"></div>
+        </div>
+      </div>
+
+      <div class="page" id="pg-users">
+        <div class="panel">
+          <h3>إدارة المستخدمين والصلاحيات (الحساب الرئيسي فقط)</h3>
+          <input type="hidden" id="u_old">
+          <div class="grid2">
+            <div><label>رقم المستخدم *</label><input id="u_no" type="number" min="0" step="1" inputmode="numeric"
+                style="direction:ltr;text-align:center"
+                oninput="if($('pm_admin').checked){this.value=0;this.readOnly=true;}"></div>
+            <div><label>اسم المستخدم *</label><input id="u_name"></div>
+            <div><label>كلمة المرور *</label>
+              <div style="display:flex;gap:6px;align-items:center">
+                <input id="u_pass" type="password" autocomplete="new-password" style="margin:0">
+                <button type="button" class="btn-g" onclick="togglePassView('u_pass',this)"
+                  title="إظهار / إخفاء كلمة المرور" style="white-space:nowrap">👁</button>
+              </div>
+            </div>
+          </div>
+          <div class="toolbar" style="margin-top:10px;gap:14px;background:#f6faf8;padding:10px;border-radius:8px">
+            <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="pm_pV" checked
+                style="width:auto"> رؤية المشاريع</label>
+            <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="pm_pE" checked
+                style="width:auto"> إدخال المشاريع</label>
+            <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="pm_mV" checked
+                style="width:auto"> عرض حركة المشاريع</label>
+            <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="pm_mE" checked
+                style="width:auto"> إدخال الفواتير</label>
+            <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="pm_mR" checked
+                style="width:auto"> تسجيل الاستحقاقات والتحصيل</label>
+            <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="pm_eV" checked
+                style="width:auto"> رؤية المصاريف</label>
+            <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="pm_eE" checked
+                style="width:auto"> إدخال المصاريف</label>
+            <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="pm_rV" checked
+                style="width:auto"> عرض التقارير</label>
+            <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="pm_rG" checked
+                style="width:auto"> عرض الرسوم البيانية</label>
+            <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="pm_admin"
+                style="width:auto"
+                onchange="if(this.checked){$('u_no').value=0;$('u_no').readOnly=true;}else{$('u_no').readOnly=false;if($('u_no').value==='0')$('u_no').value=nextUserNo();}">
+              حساب رئيسي (رقم 0)</label>
+          </div>
+          <div class="toolbar" style="margin-top:12px">
+            <button class="btn btn-p" onclick="saveUser()">💾 حفظ المستخدم</button>
+            <button class="btn btn-g" onclick="resetUserForm()">جديد</button>
+            <button class="btn btn-p" onclick="openPassModal()" title="تغيير كلمة سر حسابي">🔑 تغيير كلمة السر</button>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>المستخدمون الحاليون</h3>
+          <div class="tw">
+            <table>
+              <thead>
+                <tr>
+                  <th>الرقم<br><small>No.</small></th>
+                  <th>المستخدم<br><small>User</small></th>
+                  <th>النوع<br><small>Role</small></th>
+                  <th>الصلاحيات<br><small>Permissions</small></th>
+                  <th>إجراءات<br><small>Actions</small></th>
+                </tr>
+              </thead>
+              <tbody id="usersBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="page" id="pg-log">
+        <div class="panel sched">
+          <h3>💾 النسخة الاحتياطية — حتى لا تنحذف المعلومات</h3>
+          <p style="font-size:13px;color:#3c554b;margin:0 0 10px">النظام يحفظ نسخة تلقائية قبل كل حذف أو تعديل. وتقدر
+            تنزّل نسخة على جهازك أو تسترجعها في أي وقت.</p>
+          <div class="toolbar">
+            <button class="btn btn-p" onclick="exportBackup()">⬇️ تنزيل نسخة احتياطية</button>
+            <button class="btn btn-g" onclick="document.getElementById('importFile').click()">⬆️ استرجاع من ملف</button>
+            <input type="file" id="importFile" accept=".json" style="display:none" onchange="importBackup(event)">
+            <button class="btn btn-g" onclick="makeAutoBackup('يدوية')">📸 حفظ نسخة تلقائية الآن</button>
+          </div>
+          <div class="tw">
+            <table>
+              <thead>
+                <tr>
+                  <th>وقت النسخة<br><small>Time</small></th>
+                  <th>السبب<br><small>Reason</small></th>
+                  <th>المشاريع<br><small>Projects</small></th>
+                  <th>الحركات<br><small>Moves</small></th>
+                  <th>المصاريف<br><small>Expenses</small></th>
+                  <th>استرجاع<br><small>Restore</small></th>
+                </tr>
+              </thead>
+              <tbody id="backupBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="panel">
+          <div
+            style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+            <h3 style="margin:0">🕵️ سجل تتبع العمليات</h3>
+            <div class="toolbar" style="margin:0">
+              <input class="search" id="searchLog" placeholder="🔍 بحث..." oninput="renderLog()">
+              <button class="btn btn-d" onclick="clearLog()">مسح السجل 🔒</button>
+            </div>
+          </div>
+          <div class="tw">
+            <table>
+              <thead>
+                <tr>
+                  <th>الوقت<br><small>Time</small></th>
+                  <th>المستخدم<br><small>User</small></th>
+                  <th>العملية<br><small>Action</small></th>
+                  <th>التفاصيل<br><small>Details</small></th>
+                </tr>
+              </thead>
+              <tbody id="logBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="footer">مؤسسة بايوني للحلول الأمنية © 2026 — جميع الحقوق محفوظة | نسخة رسمية قابلة للتطوير</div>
+  </div>
+
+  <div id="valueModal" class="modal" onclick="if(event.target===this)closeProjectValue()">
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="valueModalTitle">
+      <button class="modal-close" type="button" onclick="closeProjectValue()" aria-label="إغلاق">×</button>
+      <h3 id="valueModalTitle">تفاصيل قيمة المشروع</h3>
+      <div id="valueModalContent"></div>
+    </div>
+  </div>
+
+  <div id="invoiceModal" class="modal" onclick="if(event.target===this)closeInvoiceModal()">
+    <div class="modal-box invoice-modal-box" role="dialog" aria-modal="true" aria-labelledby="invoiceModalTitle">
+      <button class="modal-close" type="button" onclick="closeInvoiceModal()" aria-label="إغلاق">×</button>
+      <h3 id="invoiceModalTitle">الفواتير المستحقة</h3>
+      <div id="invoiceModalContent"></div>
+    </div>
+  </div>
+
+  <div id="amountModal" class="modal" onclick="if(event.target===this)closeAmountModal()">
+    <div class="modal-box invoice-modal-box" role="dialog" aria-modal="true" aria-labelledby="amountModalTitle">
+      <button class="modal-close" type="button" onclick="closeAmountModal()" aria-label="إغلاق">×</button>
+      <h3 id="amountModalTitle">المبالغ المستحقة</h3>
+      <div id="amountModalContent"></div>
+    </div>
+  </div>
+
+  <div id="receivableModal" class="modal" onclick="if(event.target===this)closeReceivableModal()">
+    <div class="modal-box invoice-modal-box" role="dialog" aria-modal="true" aria-labelledby="receivableModalTitle">
+      <button class="modal-close" type="button" onclick="closeReceivableModal()" aria-label="إغلاق">×</button>
+      <h3 id="receivableModalTitle">تسجيل استحقاق القسط</h3>
+      <div id="receivableModalContent"></div>
+    </div>
+  </div>
+
+  <div id="recordedModal" class="modal" onclick="if(event.target===this)closeRecordedModal()">
+    <div class="modal-box invoice-modal-box" role="dialog" aria-modal="true" aria-labelledby="recordedModalTitle">
+      <button class="modal-close" type="button" onclick="closeRecordedModal()" aria-label="إغلاق">×</button>
+      <h3 id="recordedModalTitle">تفاصيل الفواتير المسجلة</h3>
+      <div id="recordedModalContent"></div>
+    </div>
+  </div>
+
+  <div id="actionModal" class="modal" onclick="if(event.target===this)closeActionMenu()">
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="actionModalTitle">
+      <button class="modal-close" type="button" onclick="closeActionMenu()" aria-label="إغلاق">×</button>
+      <h3 id="actionModalTitle">خيارات السجل</h3>
+      <div class="toolbar" style="margin:0">
+        <button class="btn btn-p" id="actionModalEdit" onclick="runActionMenu('edit')">✏️ تعديل</button>
+        <button class="btn btn-d" id="actionModalDelete" onclick="runActionMenu('delete')">🗑️ حذف</button>
+        <button class="btn btn-g" onclick="closeActionMenu()">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="expDetailModal" class="modal" onclick="if(event.target===this)closeExpDetail()">
+    <div class="modal-box invoice-modal-box" role="dialog" aria-modal="true" aria-labelledby="expDetailTitle">
+      <button class="modal-close" type="button" onclick="closeExpDetail()" aria-label="إغلاق">×</button>
+      <h3 id="expDetailTitle">💰 تفاصيل المصاريف | Expenses Details</h3>
+      <div id="expDetailContent"></div>
+    </div>
+  </div>
+
+  <div id="passModal" class="modal" onclick="if(event.target===this)closePassModal()">
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="passModalTitle">
+      <button class="modal-close" type="button" onclick="closePassModal()" aria-label="إغلاق">×</button>
+      <h3 id="passModalTitle">🔑 تغيير كلمة السر</h3>
+      <p style="font-size:13px;color:#3c554b;margin:0 0 12px">غيّر كلمة سر حسابك الشخصي — تحتاج كلمة السر الحالية
+        للتأكيد.</p>
+      <div id="passModalBody"></div>
+    </div>
+  </div>
+
+  <div id="notificationModal" class="modal" onclick="if(event.target===this)closeNotifications()">
+    <div class="modal-box invoice-modal-box" role="dialog" aria-modal="true" aria-labelledby="notificationModalTitle">
+      <button class="modal-close" type="button" onclick="closeNotifications()" aria-label="إغلاق">×</button>
+      <h3 id="notificationModalTitle">التنبيهات | Notifications</h3>
+      <div id="notificationModalContent"></div>
+    </div>
+  </div>
+
+  <div id="dbSettingsModal" class="modal" onclick="if(event.target===this)closeDbSettingsModal()">
+    <div class="modal-box invoice-modal-box" style="max-width:620px" role="dialog" aria-modal="true"
+      aria-labelledby="dbSettingsTitle">
+      <button class="modal-close" type="button" onclick="closeDbSettingsModal()" aria-label="إغلاق">×</button>
+      <h3 id="dbSettingsTitle">☁️ إعدادات ربط قاعدة بيانات Supabase</h3>
+
+      <div id="dbLiveStatusAlert"
+        style="margin-bottom:16px;padding:14px 18px;border-radius:12px;font-size:13.5px;font-weight:700;display:flex;align-items:center;gap:10px;">
+      </div>
+
+      <div
+        style="background:#f8fbf9;border:1.5px solid var(--border);border-radius:14px;padding:18px;margin-bottom:16px">
+        <div style="margin-bottom:14px">
+          <label>🔗 رابط المشروع (Project URL) *</label>
+          <input id="sb_url" placeholder="https://xxxxxxxxxxxx.supabase.co"
+            style="direction:ltr;text-align:left;font-family:monospace;font-size:13.5px">
+          <small style="color:var(--muted);font-size:11.5px">احصل عليه من: Supabase -> Project Settings -> API ->
+            Project URL</small>
+        </div>
+
+        <div style="margin-bottom:6px">
+          <label>🔑 المفتاح العام (anon public key) *</label>
+          <textarea id="sb_key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+            style="direction:ltr;text-align:left;font-family:monospace;font-size:12px;min-height:80px"></textarea>
+          <small style="color:var(--muted);font-size:11.5px">احصل عليه من: Supabase -> Project Settings -> API ->
+            Project API Keys -> anon public</small>
+        </div>
+      </div>
+
+      <div
+        style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-top:14px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-p" onclick="saveAndConnectSupabase()">🚀 فحص وحفظ الاتصال</button>
+          <button class="btn btn-s" onclick="triggerManualSync()">🔄 مزامنة البيانات الآن</button>
+        </div>
+        <button class="btn btn-g" onclick="closeDbSettingsModal()">إغلاق</button>
+      </div>
+
+      <div
+        style="margin-top:16px;padding-top:14px;border-top:1px dashed var(--border);font-size:12px;color:var(--muted);line-height:1.6">
+        💡 <b>خطوة مهمة:</b> تأكد من تشغيل كود <code>supabase-setup.sql</code> داخل <b>SQL Editor</b> في موقع Supabase
+        لإنشاء الجداول وحمايتها قبل الفحص.
+      </div>
+    </div>
+  </div>
+
+  <div id="serviceTypesModal" class="modal" onclick="if(event.target===this)closeServiceTypesModal()">
+    <div class="modal-box invoice-modal-box" style="max-width:560px" role="dialog" aria-modal="true"
+      aria-labelledby="serviceTypesModalTitle">
+      <button class="modal-close" type="button" onclick="closeServiceTypesModal()" aria-label="إغلاق">×</button>
+      <h3 id="serviceTypesModalTitle">⚙️ إدارة أنواع الخدمات (الحساب الرئيسي)</h3>
+      <p style="font-size:13px;color:#3c554b;margin:0 0 12px">يمكنك إضافة أنواع خدمات جديدة أو تعديلها وحذفها. تظهر هذه
+        الأنواع في خيارات المشاريع وتُحفظ في قاعدة بيانات Supabase سحابياً ومحلياً.</p>
+
+      <div
+        style="background:#f8fbf9;border:1.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px">
+        <label style="font-weight:700;margin-bottom:6px;display:block">➕ إضافة نوع خدمة جديد</label>
+        <div style="display:flex;gap:8px">
+          <input id="newServiceTypeName" placeholder="مثال: خدمي توريد وبرمجة..." style="margin:0;flex:1"
+            onkeydown="if(event.key==='Enter')addCustomServiceType()">
+          <button class="btn btn-p" onclick="addCustomServiceType()" style="white-space:nowrap">إضافة ➕</button>
+        </div>
+      </div>
+
+      <h4 style="margin:10px 0 6px;font-size:14px;color:var(--primary)">📋 قائمة أنواع الخدمات الحالية</h4>
+      <div class="tw" style="max-height:260px;overflow-y:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>الترتيب</th>
+              <th>نوع الخدمة</th>
+              <th>النوع</th>
+              <th>إجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="serviceTypesListBody"></tbody>
+        </table>
+      </div>
+
+      <div class="toolbar" style="margin-top:14px">
+        <button class="btn btn-g" onclick="closeServiceTypesModal()">إغلاق ✖</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const K = { users: 'ps_users_v1', projects: 'ps_projects_v2', moves: 'ps_moves_v2', exps: 'ps_exps_v1', ses: 'ps_session_v1', log: 'ps_log_v1', backups: 'ps_backups_v1', serviceTypes: 'ps_service_types_v1' };
+    const $ = id => document.getElementById(id);
+
+    // ─── تخزين ذكي: محلي + Supabase ──────────────────────────────────
+    // load: يقرأ من localStorage (السريع)
+    // save: يحفظ محلياً + يرسل إلى Supabase بشكل غير متزامن
+    const load = (k, f) => smartLoad(k, f);
+    const save = (k, v) => { smartSave(k, v); };  // async في الخلفية
+    const uid = () => Date.now().toString(36) + Math.floor(Math.random() * 999);
+    const fmt = n => Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
+    const pad2 = n => String(n).padStart(2, '0');
+    const dateParts = value => { const m = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})/); if (m) return { y: +m[1], m: +m[2] - 1, d: +m[3] }; const d = new Date(value); return Number.isNaN(d.getTime()) ? null : { y: d.getFullYear(), m: d.getMonth(), d: d.getDate() }; };
+    const today = () => { const d = new Date(); return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; };
+    const escHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    const arabicMonths = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+    const daysInMonth = (year, month) => new Date(Number(year), Number(month), 0).getDate();
+    function dateDisplayValue(iso) {
+      const p = dateParts(iso); return p ? `${pad2(p.d)}/${pad2(p.m + 1)}/${p.y}` : '';
+    }
+    /* عرض التاريخ بالصيغة يوم/شهر/سنة ميلادي */
+    const dsp = v => { const s = dateDisplayValue(v); return s || (v ? String(v) : '—'); };
+    function expenseDateIso(display) {
+      const parts = String(display || '').split('/').map(Number);
+      if (parts.length !== 3 || parts.some(n => !Number.isFinite(n))) return '';
+      const [d, m, y] = parts;
+      if (y < 1900 || y > 2200 || m < 1 || m > 12 || d < 1 || d > daysInMonth(y, m)) return '';
+      return `${y}-${pad2(m)}-${pad2(d)}`;
+    }
+    /* ---- إدخال التاريخ الميلادي: خانة واحدة سلسة (يوم/شهر/سنة) ---- */
+    const AR_DAYS = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+    function dateToIso(display) { return expenseDateIso(display); }
+    function isoToDisplay(iso) { return dateDisplayValue(iso); }
+    function gregLabel(iso) {
+      const p = dateParts(iso); if (!p) return '';
+      const d = new Date(p.y, p.m, p.d);
+      return AR_DAYS[d.getDay()] + ' ' + p.d + ' ' + arabicMonths[p.m] + ' ' + p.y;
+    }
+    function onDateInput(el) {
+      if (!el) return;
+      const isoId = el.dataset.iso || '';
+      const digits = String(el.value || '').replace(/\D/g, '').slice(0, 8);
+      let disp = digits;
+      if (digits.length > 4) disp = digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4);
+      else if (digits.length > 2) disp = digits.slice(0, 2) + '/' + digits.slice(2);
+      el.value = disp;
+      const iso = dateToIso(disp);
+      const isoEl = $(isoId); if (isoEl) isoEl.value = iso;
+      const hint = $(isoId + '_hint');
+      if (hint) {
+        if (!disp) { hint.textContent = ''; hint.className = 'date-hint'; }
+        else if (iso) { hint.textContent = '✅ ' + gregLabel(iso); hint.className = 'date-hint ok'; }
+        else { hint.textContent = '❌ تاريخ غير صحيح — اكتب يوم/شهر/سنة ميلادي'; hint.className = 'date-hint bad'; }
+      }
+      if (isoId === 'p_start' || isoId === 'p_end') calcAfter();
+      if (isoId === 'p_end' && iso && $('p_start')?.value && iso < $('p_start').value) {
+        const h = $('p_end_hint'); if (h) { h.textContent = '❌ تاريخ النهاية قبل تاريخ البداية'; h.className = 'date-hint bad'; }
+      }
+    }
+    function onMonthInput(el) {
+      if (!el) return;
+      const d = String(el.value || '').replace(/\D/g, '').slice(0, 6);
+      const disp = d.length > 2 ? d.slice(0, 2) + '/' + d.slice(2) : d;
+      el.value = disp;
+      const m = Number(disp.slice(0, 2)), y = disp.slice(3);
+      const ok = disp.length === 7 && m >= 1 && m <= 12 && y.length === 4 && Number(y) >= 1970 && Number(y) <= 2200;
+      const t = $('dueInvMonth'); if (t) t.value = ok ? `${y}-${pad2(m)}` : '';
+      const h = $('dueInvMonth_hint');
+      if (h) {
+        h.textContent = !disp ? '' : (ok ? ('✅ ' + arabicMonths[m - 1] + ' ' + y) : '❌ أدخل شهر/سنة صحيحة (مثال: 03/2026)');
+        h.className = 'date-hint ' + (ok ? 'ok' : 'bad');
+      }
+    }
+    function setMonthInput(iso) {
+      const el = $('dueInvMonthDisp'); if (!el) return;
+      const m = String(iso || '').match(/^(\d{4})-(\d{2})$/);
+      el.value = m ? m[2] + '/' + m[1] : '';
+      onMonthInput(el);
+    }
+    function setDateInput(prefix, value) {
+      const el = document.querySelector('[data-iso="' + prefix + '"]');
+      if (!el) return;
+      el.value = isoToDisplay(value) || '';
+      onDateInput(el);
+    }
+    function clearDateInput(prefix) {
+      const el = document.querySelector('[data-iso="' + prefix + '"]');
+      if (!el) return;
+      el.value = ''; onDateInput(el);
+    }
+    function setDatePicker(prefix, value) { setDateInput(prefix, value); }
+    function clearDatePicker(prefix) { clearDateInput(prefix); }
+    function formatExpenseDate(el) { onDateInput(el); }
+    function initDatePickers() { }
+
+    const ALL_PERMS = { pV: 1, pE: 1, mV: 1, mE: 1, mR: 1, eV: 1, eE: 1, rV: 1, rG: 1 };
+    /* ترتيب أرقام المستخدمين المعتمد: 0 admin — 1 — 2 — 3 */
+    const USER_ROWS = [
+      { no: 1, names: ['احمد محمد العمودي'], username: 'احمد محمد العمودي' },
+      { no: 2, names: ['طلال حسين بايوني'], username: 'طلال حسين بايوني' },
+      { no: 3, names: ['ابراهيم', 'ابرهام'], username: 'ابراهيم' }
+    ];
+    let users = load(K.users, null) || [];
+    const permCount = u => Object.values(u.perms || {}).filter(Boolean).length;
+    const looseName = (a, b) => nameMatches(a, b) || lev(a, b) <= 4;
+    function fixUserNumbers() {
+      /* الحساب الرئيسي = رقم 0 دائماً */
+      let admin = users.find(u => u.role === 'admin') || users.find(u => looseName(u.username, 'admin'));
+      if (!admin) { admin = { no: 0, username: 'admin', password: '301143', role: 'admin', perms: { ...ALL_PERMS } }; users.unshift(admin); }
+      admin.no = 0; admin.role = 'admin';
+      const others = users.filter(u => u !== admin);
+      const fixed = [admin];
+      /* ربط الأسماء الأساسية بأرقامها */
+      USER_ROWS.forEach(r => {
+        const cand = others.filter(u => r.names.some(n => looseName(u.username, n)))
+          .sort((a, b) => permCount(b) - permCount(a) || Number(a.no) - Number(b.no));
+        const u = cand[0];
+        if (!u) { users.push({ no: r.no, username: r.username, password: '301143', role: 'user', perms: { ...ALL_PERMS } }); fixed.push(users[users.length - 1]); return; }
+        u.no = r.no; fixed.push(u);
+      });
+      /* أي حساب إضافي يأخذ رقماً بعد 3 */
+      const used = new Set(fixed.map(u => Number(u.no)));
+      users.filter(u => !fixed.includes(u)).sort((a, b) => Number(a.no) - Number(b.no)).forEach(u => {
+        let n = Math.max(4, ...used) + 0; while (used.has(n)) n++;
+        u.no = n; used.add(n);
+      });
+    }
+    fixUserNumbers();
+    users.forEach(u => { if (u.username === 'admin' && u.password === 'admin123') u.password = '301143'; if (u.role !== 'admin') { u.perms = u.perms || {}; if (u.perms.mR === undefined) u.perms.mR = 1; if (u.perms.rG === undefined) u.perms.rG = 1; } });
+    save(K.users, users);
+
+    /* ---- الجلسة والصلاحيات ---- */
+    function me() {
+      const name = localStorage.getItem(K.ses);
+      return name ? users.find(u => u.username === name) || null : null;
+    }
+    function isAdmin() { const m = me(); return !!m && m.role === 'admin'; }
+    function can(perm) {
+      const m = me(); if (!m) return false;
+      if (m.role === 'admin') return true;
+      return !!(m.perms && m.perms[perm]);
+    }
+
+    /* ---- حساب عدد الأشهر بين تاريخين (يشمل اليوم الأخير) ---- */
+    function monthDiffSafe(s, e) {
+      const a = dateParts(s), b = dateParts(e);
+      if (!a || !b) return 0;
+      const end = new Date(b.y, b.m, b.d + 1); // اليوم التالي لنهاية المشروع
+      let months = (end.getFullYear() - a.y) * 12 + (end.getMonth() - a.m);
+      if (end.getDate() < a.d) months--;
+      return Math.max(1, months);
+    }
+
+    // ─── إدارة أنواع الخدمات (صيانة، تركيب، صيانة وتركيب، غير محدد، وأنواع مخصصة) ──────────────
+    const DEFAULT_SERVICE_TYPES = [
+      { id: 'svc_maintenance', name: 'خدمة صيانة', isDefault: true, sortOrder: 1 },
+      { id: 'svc_installation', name: 'خدمة تركيب', isDefault: true, sortOrder: 2 },
+      { id: 'svc_both', name: 'خدمة صيانة وتركيب', isDefault: true, sortOrder: 3 },
+      { id: 'svc_none', name: 'غير محدد', isDefault: true, sortOrder: 4 }
+    ];
+    function ensureServiceTypes() {
+      if (!serviceTypes || !Array.isArray(serviceTypes) || serviceTypes.length === 0) {
+        serviceTypes = [...DEFAULT_SERVICE_TYPES];
+      } else {
+        serviceTypes.forEach(s => {
+          if (s.name === 'خدمي صيانة') s.name = 'خدمة صيانة';
+          if (s.name === 'خدمي تركيب') s.name = 'خدمة تركيب';
+        });
+        DEFAULT_SERVICE_TYPES.forEach(def => {
+          if (!serviceTypes.some(s => s.name === def.name || s.id === def.id)) {
+            serviceTypes.push(def);
+          }
+        });
+      }
+      save(K.serviceTypes, serviceTypes);
+      return serviceTypes;
+    }
+    let serviceTypes = load(K.serviceTypes, null);
+    ensureServiceTypes();
+
+    /* ---- إخفاء/إظهار عمود نوع الخدمة في الجداول (بشكل اختياري) ---- */
+    let isSvcColHidden = load('ps_hide_svc_col', false);
+
+    function updateSvcColVisibilityUI() {
+      if (isSvcColHidden) {
+        document.body.classList.add('hide-svc-col');
+      } else {
+        document.body.classList.remove('hide-svc-col');
+      }
+      ['dashSvcColState', 'projectsSvcColState', 'movesSvcColState'].forEach(id => {
+        const el = $(id);
+        if (el) el.textContent = isSvcColHidden ? 'مخفي 🙈' : 'ظاهر 👁️';
+      });
+      ['dashColToggleBtn', 'projectsColToggleBtn', 'movesColToggleBtn'].forEach(id => {
+        const btn = $(id);
+        if (btn) {
+          if (isSvcColHidden) btn.classList.add('is-hidden');
+          else btn.classList.remove('is-hidden');
+        }
+      });
+    }
+
+    function toggleServiceTypeColumn() {
+      isSvcColHidden = !isSvcColHidden;
+      save('ps_hide_svc_col', isSvcColHidden);
+      updateSvcColVisibilityUI();
+      if (typeof showSystemNotification === 'function') {
+        showSystemNotification(isSvcColHidden ? '🙈 تم إخفاء عمود نوع الخدمة من الجداول' : '👁️ تم إظهار عمود نوع الخدمة في الجداول');
+      }
+    }
+
+    /* ---- الربط التفاعلي لأزرار خيارات نوع الخدمة (Pills) ---- */
+    function selectServiceTypePill(val) {
+      const sel = $('p_service_type');
+      if (sel) {
+        let match = Array.from(sel.options).find(o => o.value === val);
+        if (!match && val) {
+          const opt = document.createElement('option');
+          opt.value = val;
+          opt.textContent = val + (val === 'غير محدد' ? ' (اختياري)' : '');
+          sel.appendChild(opt);
+        }
+        if (val) sel.value = val;
+      }
+      document.querySelectorAll('.svc-pill').forEach(btn => {
+        if (btn.getAttribute('data-val') === val) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+    }
+
+    function syncServiceTypeFromSelect() {
+      const sel = $('p_service_type');
+      if (!sel) return;
+      selectServiceTypePill(sel.value);
+    }
+
+    function hasMaintenance(p) {
+      if (!p) return false;
+      const s = String(p.serviceType || '').trim();
+      return s.includes('صيانة') || s === 'خدمة صيانة' || s === 'خدمي صيانة' || s === 'صيانة' || p.hasMaintenance === true;
+    }
+
+    function hasInstallation(p) {
+      if (!p) return false;
+      const s = String(p.serviceType || '').trim();
+      return s.includes('تركيب') || s === 'خدمة تركيب' || s === 'خدمي تركيب' || s === 'تركيب' || p.hasInstallation === true;
+    }
+
+    function maintenanceCell(p) {
+      if (hasMaintenance(p)) {
+        return `<td style="text-align:center"><span class="badge b-green" style="font-size:11.5px;font-weight:700">🛠️ صيانة</span></td>`;
+      }
+      return `<td style="text-align:center;color:#bbb;font-weight:bold">—</td>`;
+    }
+
+    function installationCell(p) {
+      if (hasInstallation(p)) {
+        return `<td style="text-align:center"><span class="badge b-blue" style="font-size:11.5px;font-weight:700">⚡ تركيب</span></td>`;
+      }
+      const s = String(p?.serviceType || '').trim();
+      if (!hasMaintenance(p) && s && s !== '—' && s !== 'غير محدد' && !s.includes('صيانة') && !s.includes('تركيب')) {
+        return `<td style="text-align:center"><span class="badge b-amber" style="font-size:11px">🏷️ ${escHtml(s)}</span></td>`;
+      }
+      return `<td style="text-align:center;color:#bbb;font-weight:bold">—</td>`;
+    }
+
+    function renderServiceTypeOptions(selectedVal) {
+      ensureServiceTypes();
+      const sel = $('p_service_type');
+      if (!sel) return;
+      const cur = selectedVal !== undefined ? selectedVal : sel.value;
+      sel.innerHTML = serviceTypes.map(s => `<option value="${escHtml(s.name)}">${escHtml(s.name)}${s.name === 'غير محدد' ? ' (اختياري)' : (s.isDefault ? ' (افتراضي)' : '')}</option>`).join('');
+      if (cur && serviceTypes.some(s => s.name === cur)) sel.value = cur;
+      else sel.value = 'غير محدد';
+      selectServiceTypePill(sel.value);
+    }
+
+    function serviceTypeBadge(name) {
+      if (!name || name === 'غير محدد' || name === 'بدون تحديد' || name === '—') {
+        return `<span class="badge b-svc-opt" style="font-size:11.5px">⚪ غير محدد (اختياري)</span>`;
+      }
+      const clean = String(name).trim();
+      if (clean === 'خدمة صيانة وتركيب' || clean === 'خدمي صيانة وتركيب' || (clean.includes('صيانة') && clean.includes('تركيب'))) {
+        return `<span class="badge b-svc-both" style="font-size:11.5px;font-weight:700">🛠️⚡ صيانة وتركيب</span>`;
+      }
+      if (clean === 'خدمي صيانة' || clean === 'خدمة صيانة' || clean === 'صيانة') {
+        return `<span class="badge b-svc-maint" style="font-size:11.5px;font-weight:700">🛠️ خدمة صيانة</span>`;
+      }
+      if (clean === 'خدمي تركيب' || clean === 'خدمة تركيب' || clean === 'تركيب') {
+        return `<span class="badge b-svc-inst" style="font-size:11.5px;font-weight:700">⚡ خدمة تركيب</span>`;
+      }
+      return `<span class="badge b-amber" style="font-size:11.5px;font-weight:700">🏷️ ${escHtml(clean)}</span>`;
+    }
+
+    function openServiceTypesModal() {
+      if (!isAdmin()) return alert('⛔ هذه الخاصية متاحة للحساب الرئيسي فقط');
+      renderServiceTypesList();
+      $('serviceTypesModal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+      setTimeout(() => $('newServiceTypeName')?.focus(), 50);
+    }
+    function closeServiceTypesModal() {
+      $('serviceTypesModal').classList.remove('open');
+      if (!document.querySelector('.modal.open')) document.body.style.overflow = '';
+    }
+    function renderServiceTypesList() {
+      const body = $('serviceTypesListBody');
+      if (!body) return;
+      body.innerHTML = serviceTypes.map((s, idx) => `
+    <tr>
+      <td style="text-align:center;font-weight:bold">${idx + 1}</td>
+      <td><b>${escHtml(s.name)}</b></td>
+      <td>${s.isDefault ? '<span class="badge b-green">افتراضي</span>' : '<span class="badge b-blue">مخصص</span>'}</td>
+      <td class="actions">
+        <button class="btn-s" style="padding:2px 8px;font-size:12px" onclick="editServiceTypeName('${escHtml(s.id)}')">✏️ تعديل</button>
+        ${!s.isDefault ? `<button class="btn-d" style="padding:2px 8px;font-size:12px" onclick="deleteServiceType('${escHtml(s.id)}')">🗑️ حذف</button>` : '<span style="color:#999;font-size:11px">محمي</span>'}
+      </td>
+    </tr>
+  `).join('') || '<tr><td colspan="4" style="text-align:center;color:#999">لا توجد أنواع خدمات</td></tr>';
+    }
+    function addCustomServiceType() {
+      if (!isAdmin()) return alert('⛔ الحساب الرئيسي فقط');
+      const input = $('newServiceTypeName');
+      const name = (input?.value || '').trim();
+      if (!name) return alert('الرجاء كتابة اسم نوع الخدمة الجديد');
+      if (serviceTypes.some(s => s.name.toLowerCase() === name.toLowerCase())) {
+        return alert('نوع الخدمة هذا موجود مسبقاً!');
+      }
+      const newType = {
+        id: 'svc_' + Date.now().toString(36) + Math.floor(Math.random() * 99),
+        name: name,
+        isDefault: false,
+        sortOrder: serviceTypes.length + 1
+      };
+      serviceTypes.push(newType);
+      save(K.serviceTypes, serviceTypes);
+      logOp('إضافة نوع خدمة', name);
+      if (input) input.value = '';
+      renderServiceTypesList();
+      renderServiceTypeOptions(name);
+      refreshAll();
+      if (typeof showSystemNotification === 'function') showSystemNotification('✅ تمت إضافة نوع الخدمة (' + name + ') ومزامنته سحابياً');
+    }
+    function quickAddServiceTypePrompt() {
+      if (!isAdmin()) return alert('⛔ الحساب الرئيسي فقط');
+      const name = prompt('➕ إضافة نوع خدمة جديد للمشاريع:\nاكتب اسم نوع الخدمة:');
+      if (!name || !name.trim()) return;
+      const clean = name.trim();
+      if (serviceTypes.some(s => s.name.toLowerCase() === clean.toLowerCase())) {
+        alert('نوع الخدمة هذا موجود مسبقاً!');
+        $('p_service_type').value = clean;
+        return;
+      }
+      const newType = {
+        id: 'svc_' + Date.now().toString(36) + Math.floor(Math.random() * 99),
+        name: clean,
+        isDefault: false,
+        sortOrder: serviceTypes.length + 1
+      };
+      serviceTypes.push(newType);
+      save(K.serviceTypes, serviceTypes);
+      logOp('إضافة نوع خدمة سريع', clean);
+      renderServiceTypeOptions(clean);
+      refreshAll();
+      if (typeof showSystemNotification === 'function') showSystemNotification('✅ تم إضافة نوع الخدمة (' + clean + ') وحفظه بنجاح');
+    }
+    function editServiceTypeName(id) {
+      if (!isAdmin()) return alert('⛔ الحساب الرئيسي فقط');
+      const s = serviceTypes.find(x => x.id === id);
+      if (!s) return;
+      const newName = prompt('تعديل اسم نوع الخدمة:', s.name);
+      if (!newName || !newName.trim() || newName.trim() === s.name) return;
+      const clean = newName.trim();
+      if (serviceTypes.some(x => x.id !== id && x.name.toLowerCase() === clean.toLowerCase())) {
+        return alert('يوجد نوع خدمة آخر بهذا الاسم!');
+      }
+      const oldName = s.name;
+      s.name = clean;
+      projects.forEach(p => {
+        if (p.serviceType === oldName) p.serviceType = clean;
+      });
+      save(K.serviceTypes, serviceTypes);
+      save(K.projects, projects);
+      logOp('تعديل نوع خدمة', oldName + ' ➔ ' + clean);
+      renderServiceTypesList();
+      renderServiceTypeOptions();
+      refreshAll();
+    }
+    function deleteServiceType(id) {
+      if (!isAdmin()) return alert('⛔ الحساب الرئيسي فقط');
+      const s = serviceTypes.find(x => x.id === id);
+      if (!s) return;
+      if (s.isDefault) return alert('لا يمكن حذف أنواع الخدمات الافتراضية');
+      const inUse = projects.filter(p => p.serviceType === s.name).length;
+      const warn = inUse > 0 ? `\n⚠️ تنبيه: هذا النوع مستخدم في (${inUse}) مشروع!` : '';
+      if (!confirm(`هل أنت متأكد من حذف نوع الخدمة "${s.name}"؟${warn}`)) return;
+      serviceTypes = serviceTypes.filter(x => x.id !== id);
+      save(K.serviceTypes, serviceTypes);
+      logOp('حذف نوع خدمة', s.name);
+      renderServiceTypesList();
+      renderServiceTypeOptions();
+      refreshAll();
+    }
+
+    let projects = load(K.projects, []);
+    let moves = load(K.moves, []);
+    let expenses = load(K.exps, []);
+    let opLog = load(K.log, []);
+    let backups = load(K.backups, []);
+    /* سجل التتبع + النسخ التلقائية */
+    function nowStr() { const d = new Date(); return d.toLocaleDateString('ar') + ' ' + d.toLocaleTimeString('ar'); }
+    function logOp(action, details) {
+      try {
+        const ts = nowStr(), user = localStorage.getItem(K.ses) || '—';
+        opLog.unshift({ t: ts, u: user, a: action, d: details || '' });
+        if (opLog.length > 500) opLog = opLog.slice(0, 500);
+        localStorage.setItem(K.log, JSON.stringify(opLog));
+        if (SupabaseState && SupabaseState.connected) {
+          db_logOp(ts, user, action, details || '').catch(() => {});
+        }
+        if ($('logBody')) renderLog();
+      } catch(e) {}
+    }
+    function makeAutoBackup(reason) {
+      try {
+        const ts = nowStr(), r = reason || 'تلقائية';
+        const snap = { t: ts, reason: r, projects, moves, expenses, users: users.map(u => ({ username: u.username, role: u.role })), serviceTypes };
+        backups.unshift(snap);
+        if (backups.length > 10) backups = backups.slice(0, 10);
+        localStorage.setItem(K.backups, JSON.stringify(backups));
+        if (SupabaseState && SupabaseState.connected) {
+          db_saveBackup(ts, r, { projects, moves, expenses, serviceTypes }).catch(() => {});
+        }
+        if ($('backupBody')) renderBackups();
+      } catch(e) {}
+    }
+    function renderBackups() {
+      $('backupBody').innerHTML = backups.map((b, i) => `<tr><td>${b.t}</td><td>${b.reason}</td><td>${b.projects.length}</td><td>${b.moves.length}</td><td>${b.expenses.length}</td><td class="actions"><button class="btn-s" onclick="restoreBackup(${i})">استرجاع</button></td></tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:#999">لا توجد نسخ بعد</td></tr>';
+    }
+    function restoreBackup(i) {
+      if (!requirePass('استرجاع نسخة احتياطية')) return;
+      const b = backups[i]; if (!b) return;
+      if (!confirm('استرجاع نسخة ' + b.t + '؟ سيتم استبدال البيانات الحالية.')) return;
+      makeAutoBackup('قبل الاسترجاع');
+      projects = b.projects || []; moves = b.moves || []; expenses = b.expenses || [];
+      if (b.serviceTypes) serviceTypes = b.serviceTypes;
+      save(K.projects, projects); save(K.moves, moves); save(K.exps, expenses);
+      if (b.serviceTypes) save(K.serviceTypes, serviceTypes);
+      logOp('استرجاع نسخة', 'نسخة ' + b.t); refreshAll();
+    }
+    function exportBackup() {
+      makeAutoBackup('قبل التنزيل');
+      const data = { app: 'مؤسسة بايوني للحلول الأمنية', date: nowStr(), projects, moves, expenses, users: users.map(u => ({ username: u.username, role: u.role, perms: u.perms })), serviceTypes, log: opLog.slice(0, 100) };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'backup-bayouni-' + today() + '.json'; a.click();
+      logOp('تنزيل نسخة', 'ملف JSON'); renderBackups();
+    }
+    function importBackup(ev) {
+      const f = ev.target.files[0]; if (!f) return;
+      if (!requirePass('استرجاع نسخة من ملف')) { ev.target.value = ''; return; }
+      const r = new FileReader();
+      r.onload = () => { try {
+        const d = JSON.parse(r.result);
+        makeAutoBackup('قبل الاستيراد');
+        if (d.projects) projects = d.projects; if (d.moves) moves = d.moves; if (d.expenses) expenses = d.expenses;
+        if (d.serviceTypes) serviceTypes = d.serviceTypes;
+        save(K.projects, projects); save(K.moves, moves); save(K.exps, expenses);
+        if (d.serviceTypes) save(K.serviceTypes, serviceTypes);
+        logOp('استيراد نسخة', 'من ملف ' + f.name); refreshAll(); alert('تم الاسترجاع ✅');
+      } catch { alert('❌ ملف غير صالح'); } ev.target.value = ''; };
+      r.readAsText(f);
+    }
+    function renderLog() {
+      const q = (($('searchLog') || {}).value || '').trim();
+      const rows = opLog.filter(l => !q || (l.a + l.d + l.u).includes(q)).slice(0, 200);
+      $('logBody').innerHTML = rows.map(l => `<tr><td style="white-space:nowrap">${l.t}</td><td><b>${l.u}</b></td><td><span class="badge b-gray">${l.a}</span></td><td>${l.d}</td></tr>`).join('') || '<tr><td colspan="4" style="text-align:center;color:#999">لا عمليات مسجلة</td></tr>';
+    }
+    function clearLog() { if (!requirePass('مسح سجل التتبع')) return; opLog = []; save(K.log, opLog); renderLog(); }
+    function applyPerms() {
+      const m = me(); if (!m) return;
+      $('whoLabel').textContent = '👤 رقم ' + (m.no ?? '—') + ' — ' + m.username + (isAdmin() ? ' (رئيسي)' : '');
+      document.querySelector('[data-p="projects"]').style.display = can('pV') ? '' : 'none';
+      document.querySelector('[data-p="moves"]').style.display = can('mV') ? '' : 'none';
+      document.querySelector('[data-p="expenses"]').style.display = can('eV') ? '' : 'none';
+      document.querySelector('[data-p="reports"]').style.display = can('rV') ? '' : 'none';
+      $('usersBtn').style.display = isAdmin() ? '' : 'none';
+      $('logBtn').style.display = isAdmin() ? '' : 'none';
+      $('notificationBtn').style.display = can('mV') ? '' : 'none';
+      $('projectFormPanel').style.display = can('pE') ? '' : 'none';
+      if ($('quickAddServiceInlineBtn')) $('quickAddServiceInlineBtn').style.display = can('pE') ? '' : 'none';
+      if ($('serviceTypesNavBtn')) $('serviceTypesNavBtn').style.display = isAdmin() ? '' : 'none';
+      if ($('dbSettingsBtn')) $('dbSettingsBtn').style.display = isAdmin() ? '' : 'none';
+      ['moveFormPanel', 'receivableFormPanel', 'receivablesViewPanel'].forEach(id => { if ($(id)) $(id).style.display = 'none'; });
+      $('expFormPanel').style.display = 'none';
+      $('expenseAddBtn').style.display = can('eE') ? '' : 'none';
+    }
+    function togglePassView(id, btn) {
+      const i = $(id); if (!i) return;
+      const show = i.type === 'password';
+      i.type = show ? 'text' : 'password';
+      if (btn) btn.textContent = show ? '🙈' : '👁';
+    }
+    function checkLoginLink() {
+      const no = String($('loginNo').value || '').trim();
+      if (no === '') return;
+      const f = users.find(x => String(x.no) === no);
+      const err = $('loginErr');
+      if (!f) { err.textContent = '❌ رقم المستخدم غير موجود'; return; }
+      const n = $('loginUser').value.trim();
+      if (n !== '' && !nameMatches(n, f.username)) err.textContent = '⚠️ الاسم لا يطابق رقم المستخدم — الصحيح: ' + f.username;
+      else err.textContent = '';
+    }
+    function fillLoginName() {
+      const no = String($('loginNo').value || '').trim();
+      if (no === '') { return; }
+      const f = users.find(x => String(x.no) === no);
+      $('loginUser').value = f ? f.username : '';
+      checkLoginLink();
+    }
+    function normAr(s) { return String(s || '').replace(/[\u064B-\u0652\u0640]/g, '').replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ؤ/g, 'و').replace(/ئ/g, 'ي').replace(/ة/g, 'ه').replace(/\s+/g, ' ').trim(); }
+    function lev(a, b) {
+      a = normAr(a).toLowerCase(); b = normAr(b).toLowerCase();
+      const m = a.length, n = b.length; if (!m) return n; if (!n) return m;
+      let prev = Array.from({ length: n + 1 }, (_, j) => j);
+      for (let i = 1; i <= m; i++) {
+        const cur = [i];
+        for (let j = 1; j <= n; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+        prev = cur;
+      }
+      return prev[n];
+    }
+    function nameMatches(typed, real) { const t = normAr(typed), r = normAr(real); return t === r || lev(t, r) <= 2; }
+    function login() {
+      const no = String($('loginNo').value || '').trim(), n = $('loginUser').value.trim(), p = $('loginPass').value;
+      const err = $('loginErr');
+      if (no === '') { err.textContent = '❌ أدخل رقم المستخدم'; return; }
+      if (!p) { err.textContent = '❌ أدخل كلمة المرور'; return; }
+      const f = users.find(x => String(x.no) === no);
+      if (!f) { err.textContent = '❌ رقم المستخدم غير موجود'; return; }
+      if (n !== '' && !nameMatches(n, f.username)) { err.textContent = '❌ رقم المستخدم لا يطابق اسم المستخدم — الاسم الصحيح: ' + f.username; return; }
+      $('loginUser').value = f.username;
+      if (f.password !== p) { err.textContent = '❌ اسم المستخدم أو كلمة المرور خطأ'; return; }
+      err.textContent = '';
+      localStorage.setItem(K.ses, f.username);
+      $('loginScreen').style.display = 'none'; $('app').style.display = 'block';
+      logOp('تسجيل دخول', 'رقم ' + f.no + ' — ' + f.username);
+      applyPerms(); refreshAll(); go('dashboard');
+    }
+    function logout() { localStorage.removeItem(K.ses); location.reload(); }
+    /* ---- تغيير كلمة السر للحساب الحالي ---- */
+    function openPassModal() {
+      const m = me(); if (!m) return alert('سجّل الدخول أولاً');
+      $('passModalBody').innerHTML = `
+    <div class="invoice-form-note">الحساب: <b>رقم ${m.no ?? '—'} — ${escHtml(m.username)}</b></div>
+    <div><label>كلمة السر الحالية *</label><input id="pw_old" type="password" autocomplete="current-password"></div>
+    <div style="margin-top:8px"><label>كلمة السر الجديدة *</label><input id="pw_new" type="password" autocomplete="new-password"></div>
+    <div style="margin-top:8px"><label>تأكيد كلمة السر الجديدة *</label><input id="pw_new2" type="password" autocomplete="new-password"></div>
+    <div id="pw_msg" style="color:#b00020;font-size:13px;margin-top:8px"></div>
+    <div class="toolbar" style="margin-top:12px">
+      <button class="btn btn-p" onclick="saveMyPassword()">💾 حفظ كلمة السر</button>
+      <button class="btn btn-g" onclick="closePassModal()">إلغاء</button>
+    </div>`;
+      $('passModal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closePassModal() {
+      $('passModal').classList.remove('open');
+      if (!document.querySelector('.modal.open')) document.body.style.overflow = '';
+    }
+    function saveMyPassword() {
+      const m = me(); if (!m) return alert('سجّل الدخول أولاً');
+      const msg = $('pw_msg');
+      const oldPw = $('pw_old').value, a = $('pw_new').value, b = $('pw_new2').value;
+      if (!oldPw || !a || !b) return msg.textContent = '❌ أكمل الحقول المطلوبة';
+      if (m.password !== oldPw) return msg.textContent = '❌ كلمة السر الحالية غير صحيحة';
+      if (a.length < 4) return msg.textContent = '❌ كلمة السر الجديدة قصيرة جداً (4 أحرف على الأقل)';
+      if (a !== b) return msg.textContent = '❌ تأكيد كلمة السر لا يطابق الجديدة';
+      makeAutoBackup('قبل تغيير كلمة سر ' + m.username);
+      m.password = a; save(K.users, users);
+      logOp('تغيير كلمة السر', 'رقم ' + m.no + ' — ' + m.username);
+      closePassModal(); alert('✅ تم تغيير كلمة السر بنجاح');
+    }
+    /* ---- قفل الحذف والتعديل بكلمة سر ---- */
+    const ACTION_PASS = '301143';
+    function requirePass(action) {
+      const v = prompt('🔒 ' + action + ' يتطلب كلمة السر:\nأدخل كلمة سر التعديل / الحذف');
+      if (v === null) return false;
+      if (v !== ACTION_PASS) { alert('❌ كلمة السر غير صحيحة'); return false; }
+      return true;
+    }
+    const titles = { dashboard: 'مشاريع', projects: 'تسجيل المشاريع', moves: 'حركة المشروع والمستحقات', expenses: 'مصاريف المشاريع', reports: 'تقارير الربح والخسارة', users: 'إدارة المستخدمين', log: 'النسخ الاحتياطي وتتبع العمليات' };
+    function go(p) {
+      document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
+      $('pg-' + p).classList.add('active');
+      document.querySelectorAll('.navtabs button').forEach(b => b.classList.toggle('active', b.dataset.p === p));
+      $('pageTitle').textContent = titles[p] || 'مشاريع';
+      $('crumbName').textContent = titles[p] || 'مشاريع';
+      $('heroBox').style.display = p === 'dashboard' ? '' : 'none';
+    }
+
+    /* ---- المشاريع + الاستحقاق الشهري ---- */
+    function cycleStep(cycle) {
+      if (cycle === 'كل شهرين') return 2;
+      if (cycle === 'كل 3 شهور' || cycle === 'ربع سنوي') return 3;
+      if (cycle === 'كل 4 شهور') return 4;
+      if (cycle === 'نصف سنوي') return 6;
+      if (cycle === 'سنوي') return 12;
+      return 1;
+    }
+    function isPeriodic(cycle) { return cycle !== 'دفعة واحدة' && cycle !== 'حسب الإنجاز'; }
+    function toggleMonthly() {
+      const c = $('p_cycle').value;
+      $('monthlyWrap').style.display = isPeriodic(c) ? '' : 'none';
+      $('monthlyLabel').textContent = c === 'شهري' ? '💰 المبلغ الشهري المستحق * (تلقائي)' : '💰 المبلغ المستحق لكل فترة (' + c + ') * (تلقائي)';
+      autoMonthly();
+    }
+    function calcAfter() {
+      const b = parseFloat($('p_before').value || 0), t = parseFloat($('p_tax').value || 0);
+      $('p_after').value = (b + b * t / 100).toFixed(2);
+      autoMonths(); autoMonthly();
+    }
+    function autoMonths() {
+      const s = $('p_start').value, e = $('p_end').value;
+      if (s && e) $('p_months').value = monthDiffSafe(s, e);
+      else $('p_months').value = '';
+    }
+    function autoMonthly() {
+      const c = $('p_cycle').value, field = $('p_monthly');
+      if (!isPeriodic(c)) { field.value = ''; return; }
+      const s = $('p_start').value, e = $('p_end').value, after = parseFloat($('p_after').value || 0);
+      if (s && e && after > 0) {
+        const count = Math.max(1, Math.ceil(monthDiffSafe(s, e) / cycleStep(c)));
+        field.value = (after / count).toFixed(2);
+      } else field.value = '';
+    }
+    function monthDiff(s, e) { return monthDiffSafe(s, e); }
+    function lastDayOfMonth(y, m) { const d = new Date(y, m + 1, 0).getDate(); return `${y}-${pad2(m + 1)}-${pad2(d)}`; }
+    function getSchedule(p) {
+      if (!p || !p.start || !p.end) return [];
+      const cycle = p.cycle || 'شهري';
+      if (cycle === 'دفعة واحدة') return [{ key: 'once', label: 'دفعة واحدة', due: p.end, amount: p.after, collect: p.collect }];
+      if (cycle === 'حسب الإنجاز') return [];
+      const start = dateParts(p.start), end = dateParts(p.end); if (!start || !end) return [];
+      const step = cycleStep(cycle);
+      const totalMonths = monthDiffSafe(p.start, p.end);
+      const count = Math.ceil(totalMonths / step);
+      const amt = parseFloat(p.monthly || 0) > 0 ? parseFloat(p.monthly) : Math.round(Number(p.after || 0) / Math.max(1, count) * 100) / 100;
+      const out = []; let y = start.y, m = start.m;
+      while (y < end.y || (y === end.y && m <= end.m)) {
+        let due = lastDayOfMonth(y, m + step - 1);
+        if (due > p.end) due = p.end;
+        const key = y + '-' + pad2(m + 1);
+        const label = new Date(y, m, 1).toLocaleDateString('ar', { month: 'long', year: 'numeric' });
+        out.push({ key, label, due, amount: amt, collect: p.collect });
+        const next = new Date(y, m + step, 1); y = next.getFullYear(); m = next.getMonth();
+        if (out.length > 36) break;
+      }
+      return out;
+    }
+    function isOverdue(due) { return due && today() >= due; }
+    function toggleProjectForm() {
+      const b = $('projectFormBody'), btn = $('projectToggleBtn');
+      const open = b.style.display === 'none';
+      b.style.display = open ? '' : 'none';
+      btn.textContent = open ? 'إخفاء ✖' : '➕ تسجيل مشروع جديد';
+      if (open) window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    function showProjectForm() { if ($('projectFormBody').style.display === 'none') toggleProjectForm(); }
+    function openNewProjectForm() { resetProjectForm(); showProjectForm(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    function saveProject() {
+      if (!can('pE')) return alert('⛔ لا تملك صلاحية الإدخال');
+      const name = $('p_name').value.trim(), num = $('p_num').value.trim(), client = $('p_client').value.trim();
+      if (!name || !num) return alert('أدخل اسم المشروع ورقمه');
+      const before = parseFloat($('p_before').value || 0), tax = parseFloat($('p_tax').value || 15);
+      const cycle = $('p_cycle').value || 'شهري';
+      const collect = $('p_collect').value || 'تحويل بنكي';
+      const after = before + before * tax / 100;
+      $('p_after').value = after.toFixed(2);
+      if (isPeriodic(cycle)) autoMonthly();
+      const monthly = parseFloat($('p_monthly').value || 0);
+      if (isPeriodic(cycle) && !monthly) return alert('أدخل تاريخ البداية والنهاية حتى يتم حساب المبلغ تلقائياً');
+      const isEdit = !!$('p_id').value;
+      if (isEdit && !requirePass('تعديل المشروع')) return;
+      const serviceType = $('p_service_type') ? $('p_service_type').value : 'غير محدد';
+      const obj = {
+        id: $('p_id').value || uid(), name, num, start: $('p_start').value, end: $('p_end').value,
+        months: parseInt($('p_months').value || 0), warrantyMonths: parseInt($('p_warranty').value || 0), before, tax, after, cycle, monthly, collect, client, serviceType, status: $('p_status').value || 'تحت العمل'
+      };
+      const i = projects.findIndex(p => p.id === obj.id);
+      if (i >= 0) projects[i] = obj;
+      else projects.push(obj);
+      save(K.projects, projects);
+      resetProjectForm();
+      if ($('projectFormBody').style.display !== 'none') toggleProjectForm();
+      refreshAll();
+      if (typeof showSystemNotification === 'function') showSystemNotification(isEdit ? '✅ تم تعديل المشروع ومزامنته سحابياً مباشرة' : '✅ تم حفظ المشروع في Supabase بنجاح ☁️');
+    }
+    function resetProjectForm() { ['p_id', 'p_name', 'p_num', 'p_client', 'p_start', 'p_end', 'p_months', 'p_warranty', 'p_before', 'p_after', 'p_monthly'].forEach(id => $(id).value = ''); clearDatePicker('p_start'); clearDatePicker('p_end'); $('p_tax').value = 15; $('p_cycle').value = 'شهري'; $('p_collect').value = 'تحويل بنكي'; $('p_status').value = 'تحت العمل'; selectServiceTypePill('غير محدد'); toggleMonthly(); $('projectFormTitle').textContent = 'تسجيل مشروع جديد'; }
+    function seedExample() {
+      if (projects.some(p => p.num === '101')) return alert('المثال 101 موجود مسبقاً');
+      const before = 300000, tax = 15, after = before + before * tax / 100;
+      projects.push({ id: uid(), name: 'خالد', num: '101', client: 'عميل تجريبي', serviceType: 'خدمة صيانة', start: '2026-01-01', end: '2026-03-31', months: 3, before, tax, after, cycle: 'شهري', monthly: Math.round(after / 3 * 100) / 100, collect: 'تحويل بنكي', status: 'تحت العمل' });
+      save(K.projects, projects); refreshAll(); alert('تم إدخال مثال: مشروع 101 - خالد (3 فواتير شهرية)');
+    }
+    function editProject(id) {
+      const p = projects.find(x => x.id === id); if (!p) return;
+      if (!requirePass('تعديل المشروع')) return;
+      $('p_id').value = p.id; $('p_name').value = p.name; $('p_num').value = p.num; $('p_client').value = p.client || '';
+      renderServiceTypeOptions(p.serviceType || 'غير محدد');
+      setDatePicker('p_start', p.start); setDatePicker('p_end', p.end);
+      $('p_months').value = p.months || monthDiffSafe(p.start, p.end); $('p_warranty').value = p.warrantyMonths || ''; $('p_before').value = p.before; $('p_tax').value = p.tax; $('p_after').value = p.after;
+      $('p_cycle').value = p.cycle || 'شهري'; $('p_monthly').value = p.monthly || ''; $('p_collect').value = p.collect || 'تحويل بنكي'; $('p_status').value = p.status || 'تحت العمل'; toggleMonthly();
+      $('projectFormTitle').textContent = 'تعديل: ' + p.name; showProjectForm(); window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    function delProject(id) {
+      if (!requirePass('حذف المشروع')) return; if (!confirm('حذف المشروع + حركاته ومصاريفه؟')) return;
+      makeAutoBackup('قبل حذف مشروع');
+      const p = projects.find(x => x.id === id);
+      projects = projects.filter(p => p.id !== id); moves = moves.filter(m => m.projectId !== id); expenses = expenses.filter(e => e.projectId !== id);
+      save(K.projects, projects); save(K.moves, moves); save(K.exps, expenses); logOp('حذف مشروع', (p ? p.name + ' (' + p.num + ')' : id)); refreshAll();
+    }
+    function projName(id) { return projects.find(p => p.id === id)?.name || '—'; }
+    function projNum(id) { return projects.find(p => p.id === id)?.num || ''; }
+    function projClient(id) { return projects.find(p => p.id === id)?.client || ''; }
+/* حالة المشروع: مكتمل فقط إذا سُجلت كل الفواتير وحُصلت */function isProjectComplete(pid) {
+      const p = projects.find(x => x.id === pid); if (!p) return false;
+      if ((p.cycle || '') === 'حسب الإنجاز') {
+        const pm = moves.filter(m => m.projectId === pid);
+        if (!pm.length) return false;
+        return pm.every(m => m.money === 'محصل' && hasReceivableRecord(m));
+      }
+      const sched = getSchedule(p);
+      if (!sched.length) return false;
+      return sched.every(s => {
+        const lm = linkedMoves(pid, s.key);
+        if (!lm.length) return false;
+        const tot = lm.reduce((a, m) => a + +m.amount, 0);
+        return tot >= s.amount - 0.01 && lm.every(m => m.money === 'محصل' && hasReceivableRecord(m));
+      });
+    }
+    function statusBadge(p) {
+      if ((p.status || '') === 'منجز') return '<span class="badge b-green" style="font-size:14px">تم إنجاز المشروع ✅</span>';
+      if (isProjectComplete(p.id)) return '<span class="badge b-green" style="font-size:14px">تم إنجاز المشروع ✅</span><br><small>كل الفواتير مسجلة ومبالغها محصلة</small>';
+      return '<span class="badge b-amber">تحت العمل 🚧</span>';
+    }
+    function setProjectDone(id) {
+      if (!requirePass('اعتماد إنجاز المشروع')) return;
+      const p = projects.find(x => x.id === id); if (!p) return;
+      if (!isProjectComplete(id)) return alert('لا يمكن الاعتماد: توجد فواتير أو تحصيلات ناقصة');
+      p.status = 'منجز'; save(K.projects, projects); logOp('اعتماد إنجاز مشروع', p.name + ' (' + p.num + ')'); refreshAll();
+    }
+    function renderProjects() {
+      const q = ($('searchProjects').value || '').trim();
+      const rows = projects.filter(p => !q || p.name.includes(q) || p.num.includes(q) || (p.client || '').includes(q) || (p.serviceType || '').includes(q));
+      $('projectsBody').innerHTML = rows.map(p => `<tr>
+    <td><b>${escHtml(p.num)}</b></td><td>${escHtml(p.name)}</td><td>${escHtml(p.client || '—')}</td><td class="col-svc-type">${serviceTypeBadge(p.serviceType)}</td><td>${projectDurationText(p)}</td><td>${dsp(p.start)}</td><td>${dsp(p.end)}</td>
+    <td>${projectValueLink(p)}</td>
+    <td>${projectWarrantyText(p)}</td>
+     <td><span class="badge b-amber">${remainingInvoicesForProject(p.id)}</span><br><small>غير مسجلة من كامل المشروع</small></td>
+     <td><span class="badge b-blue">${remainingInstallmentsForProject(p.id)}</span><br><small>فترات متبقية</small></td>
+    <td><span class="badge b-green">${escHtml(p.cycle || 'شهري')}</span><br><small>للفترة: <b>${fmt(p.monthly)}</b><br>تحصيل: ${escHtml(p.collect || '-')}</small></td>
+    <td>${statusBadge(p)}</td>
+    <td class="actions">${can('pE') ? `<button class="action-menu-btn" title="تعديل أو حذف" onclick="openActionMenu('تعديل المشروع','editProject','${escHtml(p.id)}','delProject','${escHtml(p.id)}')">✏️</button>` : '<span style="color:#999">عرض فقط</span>'}</td></tr>`).join('') || '<tr><td colspan="14" style="text-align:center;color:#999">لا توجد مشاريع</td></tr>';
+    }
+
+    /* ---- الحركة + الجدول التلقائي ---- */
+    function linkedMoves(pid, key) {
+      return moves.filter(m => m.projectId === pid && (m.id === key || m.periodKey === key || m.month === key || (m.due || '').slice(0, 7) === key));
+    }
+    function moveDueAmount(m) { return Number(m?.dueAmount ?? m?.amount ?? 0); }
+    function hasReceivableRecord(m) { return !!(m && (m.receivableLogged || m.bank || m.transferDate || m.receivableNote || (m.receivableLogged == null && m.money === 'محصل'))); }
+    function invoiceState(m) {
+      if (!m) return 'pending';
+      if (m.money === 'محصل' && hasReceivableRecord(m)) return 'recorded';
+      if (m.money === 'مستحق' || m.money === 'محصل' || (m.due && isOverdue(m.due) && m.money !== 'محصل')) return 'due';
+      return 'pending';
+    }
+    function isOpenDue(m) { return invoiceState(m) === 'due' && !hasReceivableRecord(m); }
+    function periodState(s, lm) {
+      const total = lm.reduce((a, m) => a + Number(m.amount || 0), 0);
+      const past = isOverdue(s.due);
+      if (lm.some(m => invoiceState(m) === 'due') || (past && (total + 0.01 < Number(s.amount || 0) || !lm.some(m => invoiceState(m) === 'recorded')))) return 'due';
+      if (lm.some(m => invoiceState(m) === 'recorded') && total + 0.01 >= Number(s.amount || 0)) return 'recorded';
+      return 'pending';
+    }
+    function projectDueAmount(pid) {
+      const p = projects.find(x => x.id === pid); if (!p) return 0;
+      const pm = moves.filter(m => m.projectId === pid), sched = getSchedule(p);
+      if (!sched.length) return pm.filter(m => invoiceState(m) === 'due').reduce((sum, m) => sum + moveDueAmount(m), 0);
+      const linkedIds = new Set(); let scheduledDue = 0;
+      sched.forEach(s => {
+        const lm = linkedMoves(pid, s.key); lm.forEach(m => linkedIds.add(m.id));
+        if (periodState(s, lm) !== 'due') return;
+        const due = lm.filter(m => invoiceState(m) === 'due');
+        scheduledDue += due.length ? due.reduce((a, m) => a + moveDueAmount(m), 0) : Math.max(Number(s.amount || 0) - lm.reduce((a, m) => a + Number(m.amount || 0), 0), 0);
+      });
+      const extra = pm.filter(m => invoiceState(m) === 'due' && !linkedIds.has(m.id)).reduce((sum, m) => sum + moveDueAmount(m), 0);
+      return scheduledDue + extra;
+    }
+    function dueInvoiceCountForProject(pid) {
+      return unenteredDuePeriodsForProject(pid).length;
+    }
+    function actionableDueAmountForProject(pid) {
+      return duePeriodsForProject(pid).reduce((sum, item) => sum + Number(item.value || 0), 0);
+    }
+    function dueAmountCountForProject(pid) {
+      return duePeriodsForProject(pid).reduce((sum, item) => sum + (item.linked.length || 1), 0);
+    }
+    function projectExpectedAmount(pid) {
+      const p = projects.find(x => x.id === pid); if (!p) return 0;
+      const sched = getSchedule(p);
+      return sched.length ? sched.reduce((sum, s) => sum + Number(s.amount || 0), 0) : moves.filter(m => m.projectId === pid).reduce((sum, m) => sum + Number(m.amount || 0), 0);
+    }
+    function projectDurationMonths(p) {
+      if (p?.start && p?.end) return monthDiffSafe(p.start, p.end);
+      return Number(p?.months || 0);
+    }
+    function projectDurationText(p) { const months = projectDurationMonths(p); return months > 0 ? months + (months === 1 ? ' شهر' : ' أشهر') : '—'; }
+    function projectWarrantyText(p) { const months = Number(p?.warrantyMonths || 0); return months > 0 ? months + (months === 1 ? ' شهر' : ' أشهر') : '—'; }
+    function renderMovementProjects() {
+      const q = ($('searchMovementProjects')?.value || '').trim();
+      const rows = projects.filter(p => !q || [p.num, p.name, p.client, p.serviceType].some(v => (v || '').includes(q)));
+      $('movementProjectsBody').innerHTML = rows.map(p => {
+        const dueCount = dueInvoiceCountForProject(p.id), amountCount = dueAmountCountForProject(p.id), due = actionableDueAmountForProject(p.id);
+        return `<tr>
+      <td><b>${escHtml(p.num || '—')}</b></td>
+      <td><b>${escHtml(p.name || '—')}</b></td>
+      <td>${escHtml(p.client || '—')}</td>
+      <td class="col-svc-type">${serviceTypeBadge(p.serviceType)}</td>
+      <td>${projectDurationText(p)}</td>
+      <td>${escHtml(dsp(p.start))}</td>
+      <td>${escHtml(dsp(p.end))}</td>
+      <td><button class="due-total" onclick="openDueInvoicesModal('${escHtml(p.id)}')" title="عرض الفواتير المستحقة">${fmt(dueCount)}</button></td>
+      <td><button class="due-total" onclick="openDueAmountsModal('${escHtml(p.id)}')" title="عرض المبالغ المستحقة">${fmt(amountCount)}</button></td>
+      <td><button class="due-total" onclick="openDueAmountsModal('${escHtml(p.id)}')" title="عرض المبالغ المستحقة">${fmt(due)}</button></td>
+      <td class="actions"><button class="btn-s" onclick="openDueInvoicesModal('${escHtml(p.id)}')">إدخال الفاتورة</button><button class="btn-g" onclick="openDueAmountsModal('${escHtml(p.id)}')">المبالغ المستحقة</button></td>
+    </tr>`;
+      }).join('') || '<tr><td colspan="11" style="text-align:center;color:#999">لا توجد مشاريع</td></tr>';
+    }
+    function registeredMovesForProject(pid) {
+      return moves.filter(m => m.projectId === pid && (m.inv || hasReceivableRecord(m)));
+    }
+    function collectedMovesForProject(pid) {
+      return registeredMovesForProject(pid).filter(m => hasReceivableRecord(m));
+    }
+    function collectedAmountForProject(pid) {
+      return collectedMovesForProject(pid).reduce((sum, m) => sum + moveDueAmount(m), 0);
+    }
+    function renderRecordedInvoices() {
+      const q = ($('searchMovementProjects')?.value || '').trim();
+      const rows = projects.filter(p => !q || [p.num, p.name, p.client, p.serviceType].some(v => (v || '').includes(q)));
+      $('movementRecordedBody').innerHTML = rows.map(p => {
+        const count = registeredMovesForProject(p.id).length, collectedCount = collectedMovesForProject(p.id).length;
+        return `<tr>
+      <td><b>${escHtml(p.num || '—')}</b></td>
+      <td><b>${escHtml(p.name || '—')}</b></td>
+      <td>${escHtml(p.client || '—')}</td>
+      <td class="col-svc-type">${serviceTypeBadge(p.serviceType)}</td>
+      <td><button class="recorded-total" onclick="openRecordedInvoicesModal('${escHtml(p.id)}')" title="عرض تفاصيل الفواتير المسجلة">${fmt(count)}</button></td>
+      <td><button class="recorded-total" onclick="openRecordedInvoicesModal('${escHtml(p.id)}')" title="عرض المبالغ المحصلة">${fmt(collectedCount)}</button></td>
+      <td><button class="btn-s" onclick="openRecordedInvoicesModal('${escHtml(p.id)}')">عرض التفاصيل</button></td>
+    </tr>`;
+      }).join('') || '<tr><td colspan="7" style="text-align:center;color:#999">لا توجد مشاريع</td></tr>';
+    }
+    function renderInvoiceStatus() {
+      const rows = moves.filter(m => m.projectId);
+      $('movementInvoiceStatusBody').innerHTML = rows.map(m => {
+        const period = periodForInvoiceKey(m.projectId, m.periodKey || m.month || m.id), processed = hasReceivableRecord(m), state = invoiceState(m);
+        const rowClass = processed ? 'row-recorded' : state === 'due' ? 'row-due' : 'row-pending';
+        const status = processed ? '<span class="badge b-green">مسجلة / لها استحقاق ✔</span>' : state === 'due' ? '<span class="badge b-red">مستحقة ❌</span>' : '<span class="badge b-blue">غير مستحقة بعد ⏳</span>';
+        const cash = m.collect === 'نقدي';
+        const action = can('mE') ? `<button class="action-menu-btn" title="تعديل" onclick="openActionMenu('تعديل الفاتورة','openRecordedInvoiceAction','${escHtml(m.projectId + '|' + (m.periodKey || m.month || m.id))}','delMove','${escHtml(m.id)}')">✏️</button>` : '<span style="color:#999">—</span>';
+        return `<tr class="${rowClass}"><td><b>${escHtml(projName(m.projectId))}</b><br><small>${escHtml(projNum(m.projectId))}</small></td><td>${escHtml(period?.label || m.month || '—')}</td><td>${escHtml(m.inv || '—')}</td><td>${fmt(m.amount)}</td><td>${escHtml(dsp(m.due))}</td><td>${status}</td><td>${cash ? 'نقدي 💵' : escHtml(m.collect || '—')}</td><td>${escHtml(m.receivableNote || m.desc || '—')}</td><td>${action}</td></tr>`;
+      }).join('') || '<tr><td colspan="9" style="text-align:center;color:#999">لا توجد فواتير مدخلة</td></tr>';
+    }
+    function renderMovementProjectDetails() { renderMovementProjects(); }
+    function onMovementProjectChange() {
+      closeInvoiceModal();
+      renderMovementProjectDetails();
+      renderRecordedInvoices();
+      renderInvoiceStatus();
+    }
+    function openReceivablesView() { openDueInvoicesModal(); }
+    function closeReceivablesView() { closeAmountModal(); }
+    function renderReceivablesView(pid) {
+      const p = projects.find(x => x.id === pid); if (!p) return;
+      const pm = moves.filter(m => m.projectId === pid);
+      const totalDue = projectDueAmount(pid);
+      $('receivablesViewSummary').innerHTML = `المبلغ الإجمالي المستحق: <b style="color:var(--red)">${fmt(totalDue)}</b> — إجمالي المتوقع: <b>${fmt(projectExpectedAmount(pid))}</b> — الفواتير المسجلة: <b>${pm.length}</b> — الأقساط المتبقية: <b>${remainingInstallmentsForProject(pid)}</b>`;
+      let periods = getSchedule(p);
+      if (!periods.length) periods = pm.map(m => ({ key: m.periodKey || m.month || m.id, label: m.month || 'فاتورة يدوية', due: m.due, amount: m.amount, collect: m.collect, moveId: m.id }));
+      const invoiceLink = m => can('mE') ? `<button class="period-link" onclick="editMove('${m.id}')">${m.inv || 'فاتورة'}</button>` : `<b>${m.inv || 'فاتورة'}</b>`;
+      const periodRows = periods.filter(item => {
+        const lm = item.moveId ? pm.filter(m => m.id === item.moveId) : linkedMoves(pid, item.key);
+        return periodState(item, lm) === 'recorded';
+      }).map(item => {
+        const lm = item.moveId ? pm.filter(m => m.id === item.moveId) : linkedMoves(pid, item.key);
+        const state = periodState(item, lm);
+        const recorded = lm.find(m => invoiceState(m) === 'recorded');
+        const dueMoves = lm.filter(m => invoiceState(m) === 'due');
+        const value = recorded ? moveDueAmount(recorded) : dueMoves.length ? dueMoves.reduce((a, m) => a + moveDueAmount(m), 0) : Math.max(Number(item.amount || 0) - lm.reduce((a, m) => a + Number(m.amount || 0), 0), 0);
+        const amount = state === 'recorded' ? `<span class="amount-recorded">${fmt(value)}</span>` : state === 'due' ? (can('mR') ? `<button class="due-amount-link" onclick="${item.moveId ? `openReceivableForMove('${item.moveId}')` : `openReceivableForPeriod('${pid}','${item.key}')`}">${fmt(value)}</button>` : `<b style="color:var(--red)">${fmt(value)}</b>`) : '—';
+        const invoices = lm.length ? lm.map(invoiceLink).join('<br>') : '—';
+        const status = state === 'recorded' ? '<span class="badge b-green">مسجلة ومحصلة ✔</span>' : state === 'due' ? '<span class="badge b-red">مستحقة ❌</span>' : '<span class="badge b-blue">غير مستحقة بعد ⏳</span>';
+        const openInvoice = item.moveId ? `editMove('${item.moveId}')` : `openInvoiceForPeriod('${pid}','${item.key}')`;
+        const openReceivable = item.moveId ? `openReceivableForMove('${item.moveId}')` : `openReceivableForPeriod('${pid}','${item.key}')`;
+        const invBtn = can('mE') ? `<button class="btn-s" onclick="${openInvoice}">${lm.length ? 'تعديل الفاتورة' : 'إضافة فاتورة'}</button>` : '';
+        const recBtn = can('mR') ? `<button class="btn-g" onclick="${openReceivable}">تسجيل المستحقات</button>` : '';
+        const action = (invBtn || recBtn) ? invBtn + recBtn : '<span style="color:#999">عرض فقط</span>';
+        return `<tr class="row-${state}"><td><b>${item.label}</b></td><td>${item.due || '—'}</td><td>${fmt(item.amount || 0)}</td><td>${invoices}</td><td>${amount}</td><td>${status}</td><td class="actions">${action}</td></tr>`;
+      }).join('');
+      $('receivableScheduleBody').innerHTML = periodRows || '<tr><td colspan="7" style="text-align:center;color:#999">لا توجد أقساط</td></tr>';
+      const invoiceRows = pm.filter(m => invoiceState(m) === 'recorded').map(m => {
+        const state = invoiceState(m);
+        const status = state === 'recorded' ? '<span class="badge b-green">مسجلة / محصلة ✔</span>' : state === 'due' ? '<span class="badge b-red">مستحقة ❌</span>' : '<span class="badge b-blue">غير مستحقة ⏳</span>';
+        const due = state === 'due' ? (can('mR') ? `<button class="due-amount-link" onclick="openReceivableForMove('${m.id}')">${fmt(moveDueAmount(m))}</button>` : `<b style="color:var(--red)">${fmt(moveDueAmount(m))}</b>`) : state === 'recorded' ? `<span class="amount-recorded">${fmt(moveDueAmount(m))}</span>` : '—';
+        const bank = m.bank ? `${m.bank}<br><small>${dsp(m.transferDate)}</small>` : '—';
+        const action = (can('mE') || can('mR')) ? (can('mE') ? `<button class="btn-s" onclick="editMove('${m.id}')">تعديل</button>` : '') + (can('mR') ? `<button class="btn-g" onclick="openReceivableForMove('${m.id}')">تسجيل المستحقات</button>` : '') : '<span style="color:#999">عرض فقط</span>';
+        return `<tr class="row-${state}"><td>${m.month || '—'}</td><td>${invoiceLink(m)}</td><td>${fmt(m.amount)}</td><td>${due}</td><td>${status}</td><td>${bank}</td><td class="actions">${action}</td></tr>`;
+      }).join('');
+      $('receivableInvoicesBody').innerHTML = invoiceRows || '<tr><td colspan="7" style="text-align:center;color:#999">لا توجد فواتير</td></tr>';
+    }
+    function renderSchedule() {
+      const pid = $('schedProject').value || projects[0]?.id;
+      if ($('schedProject').value !== pid && pid) $('schedProject').value = pid;
+      const p = projects.find(x => x.id === pid);
+      if (!p) { $('schedBody').innerHTML = '<tr><td colspan="8" style="text-align:center;color:#999">أضف مشروعاً أولاً</td></tr>'; return; }
+      if ((p.cycle || '') === 'حسب الإنجاز') { $('schedBody').innerHTML = '<tr><td colspan="8" style="text-align:center">نظام حسب الإنجاز — أدخل الفواتير يدوياً</td></tr>'; return; }
+      const sched = getSchedule(p);
+      const visibleSched = sched.filter(s => periodState(s, linkedMoves(pid, s.key)) === 'recorded');
+      $('schedBody').innerHTML = visibleSched.map(s => {
+        const lm = linkedMoves(pid, s.key), state = periodState(s, lm);
+        const actual = lm.reduce((a, m) => a + Number(m.amount || 0), 0);
+        const recorded = lm.find(m => invoiceState(m) === 'recorded');
+        const dueMoves = lm.filter(m => invoiceState(m) === 'due');
+        const value = recorded ? moveDueAmount(recorded) : dueMoves.length ? dueMoves.reduce((a, m) => a + moveDueAmount(m), 0) : Math.max(Number(s.amount || 0) - actual, 0);
+        const amountView = state === 'recorded'
+          ? `<span class="amount-recorded">${fmt(value)}</span><br><small>${recorded.bank || '—'}${recorded.transferDate ? ' | ' + recorded.transferDate : ''}</small>`
+          : state === 'due' ? `<button class="due-amount-link" onclick="openReceivableForPeriod('${pid}','${s.key}')">${fmt(value)}</button><br><small>اضغط لتسجيل المستحق</small>` : '—';
+        const status = state === 'recorded' ? '<span class="badge b-green">محصلة ومسجلة ✔</span>' : state === 'due' ? '<span class="badge b-red">مستحقة - غير مسجلة ❌</span>' : '<span class="badge b-blue">غير مستحقة بعد ⏳</span>';
+        const invoiceAction = !lm.length && state === 'due' ? 'openDueInvoicesModal()' : `openInvoiceForPeriod('${pid}','${s.key}')`;
+        const actions = can('mE')
+          ? `<button class="btn-s" onclick="${invoiceAction}">${lm.length ? 'تعديل الفاتورة' : 'إدخال الفاتورة'}</button><button class="btn-g" onclick="openReceivableForPeriod('${pid}','${s.key}')">تسجيل المستحقات</button>`
+          : '<span style="color:#999">عرض فقط</span>';
+        const monthCell = can('mE') ? `<button class="period-link" onclick="openInvoiceForPeriod('${pid}','${s.key}')">${s.label}</button>` : `<b>${s.label}</b>`;
+        return `<tr class="row-${state}"><td>${monthCell}</td><td>${s.due}</td><td><b>${fmt(s.amount)}</b></td><td>${s.collect || '-'}</td><td>${actual ? fmt(actual) : '—'}</td><td>${amountView}</td><td>${status}</td><td class="actions">${actions}</td></tr>`;
+      }).join('') || '<tr><td colspan="8" style="text-align:center;color:#999">لا توجد فواتير مسجلة ومحصلة</td></tr>';
+    }
+    function duePeriodsForProject(pid) {
+      const p = projects.find(x => x.id === pid); if (!p) return [];
+      const out = [], linkedIds = new Set();
+      getSchedule(p).forEach(s => {
+        const lm = linkedMoves(pid, s.key); lm.forEach(m => linkedIds.add(m.id));
+        if (periodState(s, lm) !== 'due') return;
+        const openMoves = lm.filter(isOpenDue);
+        if (lm.length && !openMoves.length) return;
+        const actual = lm.reduce((sum, m) => sum + Number(m.amount || 0), 0);
+        const value = openMoves.length ? openMoves.reduce((sum, m) => sum + moveDueAmount(m), 0) : Math.max(Number(s.amount || 0) - actual, 0);
+        out.push({ period: s, linked: openMoves, state: 'due', actual, value });
+      });
+      moves.filter(m => m.projectId === pid && isOpenDue(m) && !linkedIds.has(m.id)).forEach(m => {
+        out.push({ period: { key: m.periodKey || m.month || m.id, label: m.month || 'فاتورة يدوية', due: m.due, amount: m.amount, collect: m.collect }, linked: [m], state: 'due', actual: Number(m.amount || 0), value: moveDueAmount(m), extra: true });
+      });
+      return out;
+    }
+    function unenteredDuePeriodsForProject(pid) {
+      const p = projects.find(x => x.id === pid); if (!p) return [];
+      return getSchedule(p).map(s => {
+        const lm = linkedMoves(pid, s.key);
+        if (periodState(s, lm) !== 'due' || lm.length) return null;
+        return { period: s, linked: [], state: 'due', actual: 0, value: Number(s.amount || 0) };
+      }).filter(Boolean);
+    }
+    function unenteredDueAmountForProject(pid) {
+      return unenteredDuePeriodsForProject(pid).reduce((sum, item) => sum + Number(item.value || 0), 0);
+    }
+    function invoicePeriodsForModal(pid) {
+      const p = projects.find(x => x.id === pid); if (!p) return [];
+      const sched = getSchedule(p);
+      if (!sched.length) return moves.filter(m => m.projectId === pid).map(m => ({ period: { key: m.periodKey || m.month || m.id, label: m.month || 'فاتورة يدوية', due: m.due, amount: m.amount, collect: m.collect }, linked: [m], actual: Number(m.amount || 0), value: moveDueAmount(m), state: hasReceivableRecord(m) ? 'recorded' : invoiceState(m) === 'due' ? 'due' : 'pending', registered: true }));
+      return sched.map(s => {
+        const lm = linkedMoves(pid, s.key), state = periodState(s, lm), actual = lm.reduce((sum, m) => sum + Number(m.amount || 0), 0), openMoves = lm.filter(isOpenDue);
+        const processed = lm.some(hasReceivableRecord), registered = lm.length > 0;
+        const value = state === 'due' ? (openMoves.length ? openMoves.reduce((sum, m) => sum + moveDueAmount(m), 0) : Math.max(Number(s.amount || 0) - actual, 0)) : (processed ? lm.reduce((sum, m) => sum + moveDueAmount(m), 0) : Number(s.amount || 0));
+        return { period: s, linked: lm, actual, value, state: processed || registered ? 'recorded' : state === 'due' ? 'due' : 'pending', registered };
+      });
+    }
+    function periodForInvoiceKey(pid, key) {
+      const p = projects.find(x => x.id === pid); if (!p) return null;
+      const scheduled = getSchedule(p).find(s => s.key === key);
+      if (scheduled) return scheduled;
+      const m = moves.find(x => x.projectId === pid && (x.id === key || x.periodKey === key || x.month === key || (x.due || '').slice(0, 7) === key));
+      return m ? { key, label: m.month || 'فاتورة يدوية', due: m.due, amount: m.amount, collect: m.collect } : null;
+    }
+    function openDueInvoicesModal(pid) {
+      pid = pid || $('schedProject')?.value || projects[0]?.id;
+      const p = projects.find(x => x.id === pid);
+      if (!p) return alert('أضف مشروعاً أولاً');
+      closeAmountModal();
+      closeReceivableModal();
+      closeRecordedModal();
+      closeNotifications();
+      renderDueInvoicesModal(pid);
+      $('invoiceModal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function renderDueInvoicesModal(pid) {
+      const p = projects.find(x => x.id === pid); if (!p) return;
+      const rows = invoicePeriodsForModal(pid);
+      $('invoiceModalTitle').textContent = 'إدخال الفواتير — ' + p.name;
+      $('invoiceModalContent').innerHTML = `
+    <div class="invoice-modal-meta">
+      <span>المشروع: <b>${escHtml(p.name)}</b> (${escHtml(p.num || '—')})</span>
+      <span>عدد الفواتير المطلوب إدخالها: <b style="color:var(--red)">${dueInvoiceCountForProject(pid)}</b> — إجمالي مبالغها: <b style="color:var(--red)">${fmt(unenteredDueAmountForProject(pid))}</b></span>
+    </div>
+    <div class="value-grid" style="margin-bottom:12px">
+      <div class="value-row"><span>اسم المشروع</span><b>${escHtml(p.name || '—')}</b></div>
+      <div class="value-row"><span>العميل</span><b>${escHtml(p.client || '—')}</b></div>
+      <div class="value-row"><span>نوع الخدمة</span><b>${serviceTypeBadge(p.serviceType)}</b></div>
+      <div class="value-row"><span>المدة</span><b>${projectDurationText(p)}</b></div>
+      <div class="value-row"><span>البداية</span><b>${escHtml(p.start || '—')}</b></div>
+      <div class="value-row"><span>النهاية</span><b>${escHtml(p.end || '—')}</b></div>
+    </div>
+    <div class="invoice-form-note">تظهر كل الفترات. الفترة المستحقة غير المسجلة باللون الأحمر، والفترة غير المستحقة باللون العادي، والفاتورة المسجلة باللون الأخضر.</div>
+    <div class="tw"><table>
+      <thead><tr><th>الفترة</th><th>تاريخ الاستحقاق</th><th>المبلغ المتوقع</th><th>المبلغ المتبقي</th><th>الفاتورة الحالية</th><th>الحالة</th><th>الإجراء</th></tr></thead>
+      <tbody>${rows.length ? rows.map(item => {
+        const s = item.period, invoice = item.linked.map(m => m.inv).filter(Boolean).join('، ') || '—';
+        const status = item.state === 'recorded' ? '<span class="badge b-green">مسجلة ✔</span>' : item.state === 'due' ? '<span class="badge b-red">مستحقة ❌</span>' : '<span class="badge b-blue">غير مستحقة بعد ⏳</span>';
+        const action = can('mE') ? `<button class="btn btn-p" onclick="openInvoiceEntryModal('${escHtml(pid)}','${escHtml(s.key)}')">${item.registered ? 'تعديل الفاتورة' : 'إدخال الفاتورة'}</button>` : '<span style="color:#999">عرض فقط</span>';
+        return `<tr class="row-${item.state}"><td><b>${escHtml(s.label)}</b></td><td>${escHtml(s.due || '—')}</td><td>${fmt(s.amount)}</td><td><b style="color:${item.state === 'due' ? 'var(--red)' : 'inherit'}">${fmt(item.value)}</b></td><td>${escHtml(invoice)}</td><td>${status}</td><td>${action}</td></tr>`;
+      }).join('') : '<tr><td colspan="7" style="text-align:center;color:#777">لا توجد فترات</td></tr>'}</tbody>
+    </table></div>
+    <div class="toolbar" style="margin:12px 0 0"><button class="btn btn-g" onclick="closeInvoiceModal()">إغلاق ✖</button></div>`;
+    }
+    function openDueAmountsModal(pid) {
+      pid = pid || $('schedProject')?.value || projects[0]?.id;
+      const p = projects.find(x => x.id === pid); if (!p) return alert('أضف مشروعاً أولاً');
+      closeInvoiceModal();
+      closeReceivableModal();
+      closeRecordedModal();
+      closeNotifications();
+      const rows = duePeriodsForProject(pid), total = actionableDueAmountForProject(pid);
+      $('amountModalTitle').textContent = 'المبالغ المستحقة — ' + p.name;
+      $('amountModalContent').innerHTML = `
+    <div class="invoice-modal-meta">
+      <span>المشروع: <b>${escHtml(p.name)}</b> (${escHtml(p.num || '—')})</span>
+      <span>عدد المبالغ المستحقة: <b style="color:var(--red)">${dueAmountCountForProject(pid)}</b> — الإجمالي: <b style="color:var(--red)">${fmt(total)}</b></span>
+    </div>
+    <div class="value-grid" style="margin-bottom:12px">
+      <div class="value-row"><span>اسم المشروع</span><b>${escHtml(p.name || '—')}</b></div>
+      <div class="value-row"><span>العميل</span><b>${escHtml(p.client || '—')}</b></div>
+      <div class="value-row"><span>نوع الخدمة</span><b>${serviceTypeBadge(p.serviceType)}</b></div>
+      <div class="value-row"><span>المدة</span><b>${projectDurationText(p)}</b></div>
+      <div class="value-row"><span>البداية</span><b>${escHtml(p.start || '—')}</b></div>
+      <div class="value-row"><span>النهاية</span><b>${escHtml(p.end || '—')}</b></div>
+    </div>
+    <div class="tw"><table>
+      <thead><tr><th>الفترة</th><th>تاريخ الاستحقاق</th><th>المبلغ المتوقع</th><th>المبلغ المسجل</th><th>المبلغ المستحق</th><th>الفاتورة</th><th>الإجراء</th></tr></thead>
+      <tbody>${rows.length ? rows.map(item => {
+        const s = item.period, invoice = item.linked.map(m => m.inv).filter(Boolean).join('، ') || '—';
+        const action = can('mR') ? `<button class="btn btn-s" onclick="openReceivableEntryModal('${escHtml(pid)}','${escHtml(s.key)}')">تسجيل الاستحقاق</button>` : '<span style="color:#999">عرض فقط</span>';
+        return `<tr class="row-due"><td><b>${escHtml(s.label)}</b></td><td>${escHtml(s.due || '—')}</td><td>${fmt(s.amount)}</td><td>${fmt(item.actual)}</td><td><b style="color:var(--red)">${fmt(item.value)}</b></td><td>${escHtml(invoice)}</td><td>${action}</td></tr>`;
+      }).join('') : '<tr><td colspan="7" style="text-align:center;color:#777">لا توجد مبالغ مستحقة</td></tr>'}</tbody>
+    </table></div>
+    <div class="toolbar" style="margin:12px 0 0"><button class="btn btn-p" onclick="openDueInvoicesModal('${escHtml(pid)}')">عرض وإدخال الفواتير المستحقة</button><button class="btn btn-g" onclick="closeAmountModal()">إغلاق ✖</button></div>`;
+      $('amountModal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeAmountModal() {
+      $('amountModal').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    function openReceivableEntryModal(pid, key) {
+      closeRecordedModal();
+      if (!can('mR')) return alert('⛔ لا تملك صلاحية تسجيل الاستحقاقات');
+      const p = projects.find(x => x.id === pid), period = p && periodForInvoiceKey(pid, key);
+      if (!p || !period) return alert('تعذر العثور على الفترة المطلوبة');
+      const lm = linkedMoves(pid, key);
+      if (!lm.length) {
+        closeAmountModal();
+        $('receivableModalTitle').textContent = 'لا توجد فاتورة مسجلة';
+        $('receivableModalContent').innerHTML = `<div class="invoice-form-note">يجب إدخال فاتورة الفترة <b>${escHtml(period.label)}</b> قبل تسجيل الاستحقاق أو المبلغ.</div><div class="toolbar"><button class="btn btn-p" onclick="closeReceivableModal();openInvoiceEntryModal('${escHtml(pid)}','${escHtml(key)}')">إدخال الفاتورة أولاً</button><button class="btn btn-g" onclick="closeReceivableModal()">إلغاء</button></div>`;
+        $('receivableModal').classList.add('open');
+        document.body.style.overflow = 'hidden';
+        return;
+      }
+      closeAmountModal();
+      const move = lm.find(m => invoiceState(m) === 'due') || lm[0];
+      $('receivableModalTitle').textContent = 'تسجيل استحقاق القسط — ' + period.label;
+      $('receivableModalContent').innerHTML = `
+    <input type="hidden" id="receivableProject" value="${escHtml(pid)}">
+    <input type="hidden" id="receivablePeriodKey" value="${escHtml(key)}">
+    <div class="invoice-modal-meta">
+      <span>المشروع: <b>${escHtml(p.name)}</b> (${escHtml(p.num || '—')})</span>
+      <span>الفترة: <b>${escHtml(period.label)}</b></span>
+    </div>
+    <div class="grid2">
+      <div><label>المشروع</label><input value="${escHtml(p.name + ' (' + p.num + ')')}" readonly></div>
+      <div><label>الفترة / القسط</label><input value="${escHtml(period.label)}" readonly></div>
+      <div><label>الفاتورة</label><select id="receivableMoveId" onchange="fillReceivableModalMove()">${lm.map(m => `<option value="${escHtml(m.id)}">${escHtml(m.inv || 'فاتورة')} — ${fmt(m.amount)}</option>`).join('')}</select></div>
+      <div><label>المبلغ المستحق / المحصل *</label><input id="receivableAmount" type="number" min="0" step="0.01"></div>
+      <div><label>حالة السجل</label><select id="receivableStatus"><option value="مستحق">مستحق 💰</option><option value="محصل">محصل ✔</option></select></div>
+      <div><label>طريقة الدفع</label><select id="receivableMethod" onchange="toggleReceivableBankFields()"><option value="تحويل بنكي">تحويل بنكي</option><option value="نقدي">نقدي</option></select></div>
+      <div id="receivableBankWrap"><label>اسم البنك المودع فيه</label><input id="receivableBank" placeholder="مثال: مصرف الرافدين"></div>
+      <div id="receivableDateWrap"><label>تاريخ الحوالة (يوم / شهر / سنة ميلادي)</label><input class="date-input" data-iso="receivableTransferDate" type="text" inputmode="numeric" dir="ltr" maxlength="10" autocomplete="off" placeholder="يوم/شهر/سنة" oninput="onDateInput(this)" onblur="onDateInput(this)"><small class="date-hint" id="receivableTransferDate_hint"></small><input type="hidden" id="receivableTransferDate"></div>
+    </div>
+    <div style="margin-top:10px"><label>ملاحظات</label><textarea id="receivableNote" placeholder="اكتب ملاحظات الاستحقاق أو الحوالة..."></textarea></div>
+    <div class="toolbar" style="margin-top:12px">
+      <button class="btn btn-p" onclick="saveReceivableModal()">💾 حفظ الاستحقاق</button>
+      <button class="btn btn-g" onclick="closeReceivableModal()">إلغاء ✖</button>
+    </div>`;
+      $('receivableMoveId').value = move.id;
+      fillReceivableModalMove();
+      $('receivableModal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function fillReceivableModalMove() {
+      const m = moves.find(x => x.id === $('receivableMoveId')?.value); if (!m) return;
+      $('receivableAmount').value = moveDueAmount(m);
+      $('receivableStatus').value = m.money === 'محصل' ? 'محصل' : 'مستحق';
+      $('receivableMethod').value = m.collect === 'نقدي' ? 'نقدي' : 'تحويل بنكي';
+      $('receivableBank').value = m.bank || '';
+      setDatePicker('receivableTransferDate', m.transferDate || '');
+      $('receivableNote').value = m.receivableNote || '';
+      toggleReceivableBankFields();
+    }
+    function toggleReceivableBankFields() {
+      const cash = $('receivableMethod')?.value === 'نقدي';
+      $('receivableBankWrap').style.display = cash ? 'none' : '';
+      $('receivableDateWrap').style.display = cash ? 'none' : '';
+      $('receivableBank').disabled = cash; $('receivableTransferDate').disabled = cash;
+      const rtd = document.querySelector('[data-iso="receivableTransferDate"]'); if (rtd) rtd.disabled = cash;
+    }
+    function saveReceivableModal() {
+      if (!can('mR')) return alert('⛔ لا تملك صلاحية تسجيل الاستحقاقات');
+      const pid = $('receivableProject').value, key = $('receivablePeriodKey').value;
+      const p = projects.find(x => x.id === pid), period = p && periodForInvoiceKey(pid, key);
+      const m = moves.find(x => x.id === $('receivableMoveId').value);
+      if (!p || !period || !m) return alert('تعذر العثور على السجل المطلوب');
+      const amount = parseFloat($('receivableAmount').value || 0);
+      if (amount <= 0) return alert('أدخل المبلغ المستحق');
+      const status = $('receivableStatus').value, method = $('receivableMethod').value;
+      const bank = $('receivableBank').value.trim(), date = $('receivableTransferDate').value, note = $('receivableNote').value.trim();
+      if (status === 'محصل' && method === 'تحويل بنكي' && (!bank || !date)) return alert('حدد اسم البنك وتاريخ الحوالة');
+      m.dueAmount = amount; m.money = status; m.collect = method; m.bank = method === 'نقدي' ? '' : bank; m.transferDate = method === 'نقدي' ? '' : date;
+      m.receivableNote = note; m.receivableLogged = true; m.invDue = status === 'محصل' ? 'مدفوعة' : (isOverdue(m.due) ? 'مستحقة' : 'غير مستحقة');
+      save(K.moves, moves); logOp(status === 'محصل' ? 'تسجيل تحصيل' : 'تسجيل استحقاق', m.inv + ' - ' + period.label + ' - ' + fmt(amount));
+      closeReceivableModal(); refreshAll(); alert('✅ تم حفظ سجل الاستحقاق');
+    }
+    function closeReceivableModal() {
+      $('receivableModal').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    function openCollectedGroupsModal() {
+      closeInvoiceModal(); closeAmountModal(); closeReceivableModal();
+      const rows = projects.map(p => ({ project: p, count: collectedMovesForProject(p.id).length, total: collectedAmountForProject(p.id) })).filter(r => r.count > 0);
+      $('recordedModalTitle').textContent = 'المبالغ المحصلة حسب المشروع';
+      $('recordedModalContent').innerHTML = rows.length ? `<div class="tw"><table>
+    <thead><tr><th>المشروع<br><small>Project</small></th><th>العميل<br><small>Client</small></th><th>نوع الخدمة<br><small>Service Type</small></th><th>عدد المبالغ المحصلة<br><small>Collected Count</small></th><th>إجمالي المحصل<br><small>Total Collected</small></th><th>الإجراء<br><small>Action</small></th></tr></thead>
+    <tbody>${rows.map(r => `<tr class="row-recorded"><td><b>${escHtml(r.project.name)}</b><br><small>${escHtml(r.project.num || '—')}</small></td><td>${escHtml(r.project.client || '—')}</td><td>${serviceTypeBadge(r.project.serviceType)}</td><td><span class="badge b-green">${r.count}</span></td><td><b>${fmt(r.total)}</b></td><td><button class="btn-s" onclick="openRecordedInvoicesModal('${escHtml(r.project.id)}')">عرض التفاصيل</button></td></tr>`).join('')}</tbody>
+  </table></div>` : '<div class="notification-empty">لا توجد مبالغ محصلة</div>';
+      $('recordedModalContent').innerHTML += '<div class="toolbar" style="margin:12px 0 0"><button class="btn btn-g" onclick="closeRecordedModal()">إغلاق ✖</button></div>';
+      $('recordedModal').classList.add('open'); document.body.style.overflow = 'hidden';
+    }
+    function openRecordedInvoicesModal(pid) {
+      if (!pid) return openCollectedGroupsModal();
+      const p = projects.find(x => x.id === pid); if (!p) return alert('أضف مشروعاً أولاً');
+      closeInvoiceModal(); closeAmountModal(); closeReceivableModal();
+      const rows = collectedMovesForProject(pid), collected = collectedAmountForProject(pid);
+      $('recordedModalTitle').textContent = 'المبالغ المحصلة — ' + p.name;
+      $('recordedModalContent').innerHTML = `
+    <div class="invoice-modal-meta">
+      <span>المشروع: <b>${escHtml(p.name)}</b> (${escHtml(p.num || '—')})</span>
+      <span>عدد المبالغ المحصلة: <b style="color:var(--green)">${rows.length}</b> — إجمالي المحصل: <b style="color:var(--green)">${fmt(collected)}</b></span>
+    </div>
+    <div class="value-grid" style="margin-bottom:12px">
+      <div class="value-row"><span>اسم المشروع</span><b>${escHtml(p.name || '—')}</b></div>
+      <div class="value-row"><span>العميل</span><b>${escHtml(p.client || '—')}</b></div>
+      <div class="value-row"><span>نوع الخدمة</span><b>${serviceTypeBadge(p.serviceType)}</b></div>
+      <div class="value-row"><span>المدة</span><b>${projectDurationText(p)}</b></div>
+      <div class="value-row"><span>البداية</span><b>${escHtml(p.start || '—')}</b></div>
+      <div class="value-row"><span>النهاية</span><b>${escHtml(p.end || '—')}</b></div>
+    </div>
+    <div class="tw"><table>
+      <thead><tr><th>الفترة</th><th>الفاتورة</th><th>المبلغ المحصل</th><th>الحالة</th><th>طريقة الدفع</th><th>البنك / نقدًا</th><th>تاريخ الحوالة</th><th>الملاحظات</th><th>الإجراء</th></tr></thead>
+      <tbody>${rows.length ? rows.map(m => {
+        const period = periodForInvoiceKey(pid, m.periodKey || m.month || m.id), cash = m.collect === 'نقدي';
+        const status = '<span class="badge b-green">مبلغ مسجل / محصل ✔</span>';
+        const action = can('mR') ? `<button class="action-menu-btn" title="تعديل" onclick="openActionMenu('تعديل السجل','openRecordedReceivableAction','${escHtml(pid + '|' + (m.periodKey || m.month || m.id))}','delMove','${escHtml(m.id)}')">✏️</button>` : '<span style="color:#999">—</span>';
+        return `<tr class="row-recorded"><td>${escHtml(period?.label || m.month || '—')}</td><td>${escHtml(m.inv || 'فاتورة')}</td><td><b>${fmt(moveDueAmount(m))}</b></td><td>${status}</td><td>${cash ? 'نقدي 💵' : escHtml(m.collect || 'تحويل بنكي 🏦')}</td><td>${cash ? 'نقدي 💵' : escHtml(m.bank || '—')}</td><td>${escHtml(dsp(m.transferDate))}</td><td>${escHtml(m.receivableNote || '—')}</td><td>${action}</td></tr>`;
+      }).join('') : '<tr><td colspan="9" style="text-align:center;color:#777">لا توجد مبالغ محصلة</td></tr>'}</tbody>
+    </table></div>
+    <div class="toolbar" style="margin:12px 0 0"><button class="btn btn-g" onclick="closeRecordedModal()">إغلاق ✖</button></div>`;
+      $('recordedModal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeRecordedModal() {
+      $('recordedModal').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    let actionMenuState = null;
+    function openActionMenu(title, editFn, editArg, deleteFn, deleteArg) {
+      actionMenuState = { editFn, editArg, deleteFn, deleteArg };
+      $('actionModalTitle').textContent = title || 'خيارات السجل';
+      const edit = $('actionModalEdit'), del = $('actionModalDelete');
+      edit.style.display = editFn ? '' : 'none'; del.style.display = deleteFn ? '' : 'none';
+      $('actionModal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeActionMenu() {
+      $('actionModal').classList.remove('open');
+      actionMenuState = null;
+      document.body.style.overflow = '';
+    }
+    function notificationSummary() {
+      const rows = projects.map(p => ({ project: p, invoices: dueInvoiceCountForProject(p.id), amounts: dueAmountCountForProject(p.id), amountValue: actionableDueAmountForProject(p.id) }));
+      return { rows, invoices: rows.reduce((s, r) => s + r.invoices, 0), amounts: rows.reduce((s, r) => s + r.amounts, 0), amountValue: rows.reduce((s, r) => s + r.amountValue, 0) };
+    }
+    function renderNotificationCount() {
+      const s = notificationSummary(), total = s.invoices + s.amounts, badge = $('notificationCount');
+      if (!badge) return;
+      badge.textContent = total; badge.style.display = total ? '' : 'none';
+    }
+    function toggleNotifications() {
+      if ($('notificationModal').classList.contains('open')) { closeNotifications(); return; }
+      renderNotifications(); $('notificationModal').classList.add('open'); document.body.style.overflow = 'hidden';
+    }
+    function closeNotifications() { $('notificationModal').classList.remove('open'); document.body.style.overflow = ''; }
+    function openNotificationTarget(kind, pid) {
+      closeNotifications(); go('moves');
+      setTimeout(() => kind === 'amount' ? openDueAmountsModal(pid) : openDueInvoicesModal(pid), 0);
+    }
+    function renderNotifications() {
+      const s = notificationSummary();
+      $('notificationModalTitle').textContent = 'التنبيهات | Notifications';
+      const cards = `<div class="notification-cards">
+    <div class="notification-card alert-invoice"><span>🧾 فواتير لم تسجل بعد | Unregistered Invoices</span><b class="n">${s.invoices}</b></div>
+    <div class="notification-card alert-amount"><span>💰 مبالغ لم تحصل بعد | Uncollected Amounts</span><b class="n">${s.amounts}</b><small>إجمالي | Total: ${fmt(s.amountValue)}</small></div>
+  </div>`;
+      const active = s.rows.filter(r => r.invoices || r.amounts);
+      const table = active.length ? `<div class="tw"><table>
+    <thead><tr><th>المشروع<br><small>Project</small></th><th>فواتير غير مسجلة<br><small>Unregistered Invoices</small></th><th>مبالغ غير محصلة<br><small>Uncollected Amounts</small></th><th>الإجراء<br><small>Action</small></th></tr></thead>
+    <tbody>${active.map(r => `<tr><td><b>${escHtml(r.project.name)}</b><br><small>${escHtml(r.project.num || '—')}</small></td><td>${r.invoices ? `<span class="badge b-red">${r.invoices}</span>` : '—'}</td><td>${r.amounts ? `<span class="badge b-amber">${r.amounts}</span>` : '—'}</td><td class="actions">${r.invoices ? `<button class="btn-s" onclick="openNotificationTarget('invoice','${escHtml(r.project.id)}')">عرض الفواتير | Invoices</button>` : ''}${r.amounts ? `<button class="btn-g" onclick="openNotificationTarget('amount','${escHtml(r.project.id)}')">عرض المبالغ | Amounts</button>` : ''}</td></tr>`).join('')}</tbody>
+  </table></div>`: '<div class="notification-empty">لا توجد تنبيهات | No notifications ✅</div>';
+      $('notificationModalContent').innerHTML = cards + table + '<div class="toolbar" style="margin:12px 0 0"><button class="btn btn-g" onclick="closeNotifications()">إغلاق | Close</button></div>';
+    }
+    function runActionMenu(kind) {
+      if (!actionMenuState) return;
+      const fn = actionMenuState[kind + 'Fn'], arg = actionMenuState[kind + 'Arg'];
+      closeActionMenu();
+      if (typeof fn === 'function') fn(arg);
+      else if (fn && typeof window[fn] === 'function') window[fn](arg);
+    }
+    function recordedActionParts(arg) { return String(arg || '').split('|'); }
+    function openRecordedInvoiceAction(arg) { const [pid, key] = recordedActionParts(arg); openInvoiceEntryModal(pid, key); }
+    function openRecordedReceivableAction(arg) { const [pid, key] = recordedActionParts(arg); openReceivableEntryModal(pid, key); }
+    function openInvoiceEntryModal(pid, key) {
+      closeReceivableModal();
+      closeAmountModal();
+      closeRecordedModal();
+      if (!can('mE')) return alert('⛔ لا تملك صلاحية الإدخال');
+      const p = projects.find(x => x.id === pid); if (!p) return;
+      const period = periodForInvoiceKey(pid, key); if (!period) return alert('لم يتم العثور على الفترة المطلوبة');
+      const lm = linkedMoves(pid, key), old = lm[0] || null;
+      const actual = lm.reduce((sum, m) => sum + Number(m.amount || 0), 0);
+      const amount = old ? Number(old.amount || 0) : Math.max(Number(period.amount || 0) - actual, 0);
+      const month = old?.month && old.month !== 'once' ? old.month : (key === 'once' || !/^\d{4}-\d{2}$/.test(key) ? (period.due || '').slice(0, 7) : key);
+      $('invoiceModalTitle').textContent = (old ? 'تعديل الفاتورة' : 'تسجيل الفاتورة') + ' — ' + period.label;
+      $('invoiceModalContent').innerHTML = `
+    <input type="hidden" id="dueInvProject" value="${escHtml(pid)}">
+    <input type="hidden" id="dueInvPeriodKey" value="${escHtml(key)}">
+    <input type="hidden" id="dueInvMoveId" value="${escHtml(old?.id || '')}">
+    <div class="invoice-modal-meta">
+      <span>المشروع: <b>${escHtml(p.name)}</b> (${escHtml(p.num || '—')})</span>
+      <span>تاريخ الاستحقاق: <b>${escHtml(dsp(period.due))}</b></span>
+    </div>
+    <div class="grid2">
+      <div><label>رقم الفاتورة *</label><input id="dueInvNumber" dir="ltr" value="${escHtml(old?.inv || '')}" placeholder="مثال: 101-2026-01"></div>
+      <div><label>فترة الفاتورة * (شهر / سنة ميلادي)</label><input id="dueInvMonthDisp" class="date-input" type="text" inputmode="numeric" dir="ltr" maxlength="7" autocomplete="off" placeholder="شهر/سنة" oninput="onMonthInput(this)" onblur="onMonthInput(this)"><small class="date-hint" id="dueInvMonth_hint"></small><input type="hidden" id="dueInvMonth" value="${escHtml(month || '')}"></div>
+      <div><label>المبلغ المرتبط بالفاتورة</label><input value="${fmt(amount)}" readonly></div>
+      <div><label>حالة الفترة</label><input value="مستحقة" readonly></div>
+    </div>
+    <div style="margin-top:10px"><label>ملاحظاتي عن الفاتورة</label><textarea id="dueInvNotes" placeholder="اكتب ملاحظات الفاتورة هنا...">${escHtml(old?.desc || '')}</textarea></div>
+    <div class="toolbar" style="margin-top:12px">
+      <button class="btn btn-p" onclick="saveInvoiceModalEntry()">🧾 إدخال الفاتورة</button>
+      <button class="btn btn-g" onclick="backToDueInvoiceList()">رجوع لقائمة المستحقات</button>
+      <button class="btn btn-d" onclick="closeInvoiceModal()">إلغاء ✖</button>
+    </div>`;
+      $('dueInvNumber').focus();
+      setMonthInput(month);
+    }
+    function backToDueInvoiceList() {
+      const pid = $('dueInvProject')?.value || $('schedProject')?.value || projects[0]?.id;
+      if (pid) renderDueInvoicesModal(pid);
+    }
+    function saveInvoiceModalEntry() {
+      if (!can('mE')) return alert('⛔ لا تملك صلاحية الإدخال');
+      const pid = $('dueInvProject').value, key = $('dueInvPeriodKey').value;
+      const p = projects.find(x => x.id === pid), period = p && periodForInvoiceKey(pid, key);
+      if (!p || !period) return alert('تعذر العثور على الفترة المطلوبة');
+      const inv = $('dueInvNumber').value.trim(), month = $('dueInvMonth').value, notes = $('dueInvNotes').value.trim();
+      if (!inv) return alert('أدخل رقم الفاتورة');
+      if (!month) return alert('حدد فترة الفاتورة (شهر / سنة ميلادي)');
+      const id = $('dueInvMoveId').value, i = moves.findIndex(m => m.id === id), old = i >= 0 ? moves[i] : null;
+      if (i >= 0 && !requirePass('تعديل الفاتورة')) return;
+      const amount = old ? Number(old.amount || 0) : Math.max(Number(period.amount || 0) - linkedMoves(pid, key).reduce((sum, m) => sum + Number(m.amount || 0), 0), 0);
+      if (amount <= 0) return alert('لا يوجد مبلغ متاح لتسجيله لهذه الفترة');
+      const obj = {
+        ...(old || {}), id: old?.id || uid(), projectId: pid, type: old?.type || 'فاتورة', inv, amount,
+        issue: old?.issue || today(), due: old?.due || period.due, invDue: old?.invDue || (isOverdue(period.due) ? 'مستحقة' : 'غير مستحقة'),
+        money: old?.money || (isOverdue(period.due) ? 'مستحق' : 'غير مستحق'), month, collect: old?.collect || period.collect || p.collect || 'تحويل بنكي',
+        desc: notes, periodKey: key, dueAmount: old?.dueAmount ?? amount, receivableLogged: old?.receivableLogged ?? false,
+        bank: old?.bank || '', transferDate: old?.transferDate || '', receivableNote: old?.receivableNote || ''
+      };
+      if (i >= 0) { moves[i] = obj; logOp('تعديل فاتورة', obj.inv + ' - ' + period.label); }
+      else { moves.push(obj); logOp('إضافة فاتورة', obj.inv + ' - ' + period.label); }
+      save(K.moves, moves); closeInvoiceModal(); refreshAll(); alert('✅ تم حفظ بيانات الفاتورة');
+    }
+    function closeInvoiceModal() {
+      $('invoiceModal').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    function autoGenerateMoves() {
+      if (!can('mE')) return alert('⛔ لا تملك صلاحية الإدخال');
+      const pid = $('schedProject').value || projects[0]?.id;
+      const p = projects.find(x => x.id === pid); if (!p) return alert('اختر المشروع');
+      const sched = getSchedule(p); let n = 0;
+      sched.forEach(s => {
+        if (linkedMoves(pid, s.key).length) return;
+        const overdue = isOverdue(s.due);
+        moves.push({
+          id: uid(), projectId: pid, type: 'مستخلص', inv: p.num + '-' + s.key, amount: s.amount,
+          issue: p.start, due: s.due, invDue: overdue ? 'مستحقة' : 'غير مستحقة',
+          money: overdue ? 'مستحق' : 'غير مستحق', month: s.key, periodKey: s.key, collect: p.collect, desc: 'توليد تلقائي - ' + s.label,
+          dueAmount: s.amount, receivableLogged: false, bank: '', transferDate: '', receivableNote: ''
+        });
+        n++;
+      });
+      save(K.moves, moves); logOp('توليد فواتير تلقائي', p.name + ' - ' + n + ' فاتورة'); refreshAll(); alert(n ? ('تم توليد ' + n + ' فاتورة') : 'كل الشهور مدخلة مسبقاً');
+    }
+    function onMoveProjectChange() {
+      $('m_periodKey').value = ''; $('m_month').value = ''; updateMoveHint();
+    }
+    function updateMoveHint() {
+      const pid = $('m_project').value; const p = projects.find(x => x.id === pid);
+      const h = $('moveHint');
+      if (!p) { h.style.display = 'none'; return; }
+      const sched = getSchedule(p);
+      const overdue = sched.filter(s => isOverdue(s.due) && !linkedMoves(pid, s.key).length);
+      h.style.display = 'block';
+      h.innerHTML = `📌 المشروع <b>${p.name} (${p.num})</b> — نظامه <b>${p.cycle}</b> — مبلغ الفترة <b>${fmt(p.monthly)}</b> — التحصيل <b>${p.collect}</b>`
+        + (overdue.length ? `<br>⚠️ يوجد <b>${overdue.length}</b> شهر مستحق ولم تطالب به: ${overdue.map(s => s.label).join('، ')} — إذا عبر الشهر فالفاتورة <b>مستحقة</b> والمبلغ <b>مستحق ومطالب به</b>.` : `<br>✅ لا توجد شهور متأخرة غير مطالب بها.`);
+      const pm = moves.filter(m => m.projectId === pid);
+      if (pm.length) { $('m_collect').value = p.collect || 'تحويل بنكي'; }
+    }
+    function startManualInvoice() {
+      if (!can('mE')) return alert('⛔ لا تملك صلاحية الإدخال');
+      const pid = $('schedProject').value || projects[0]?.id;
+      if (!pid) return alert('أضف مشروعاً أولاً');
+      const p = projects.find(x => x.id === pid);
+      resetMoveForm();
+      $('m_project').value = pid;
+      $('m_collect').value = p?.collect || 'تحويل بنكي';
+      $('m_issue').value = today();
+      $('m_due').value = today();
+      $('m_month').value = today().slice(0, 7);
+      $('moveFormTitle').textContent = 'تسجيل فاتورة جديدة';
+      $('receivableFormPanel').style.display = 'none';
+      $('moveFormPanel').style.display = '';
+      updateMoveHint();
+      $('moveFormPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    function openInvoiceForPeriod(pid, key) {
+      if (!can('mE')) return alert('⛔ لا تملك صلاحية الإدخال');
+      const p = projects.find(x => x.id === pid); if (!p) return;
+      const period = getSchedule(p).find(s => s.key === key); if (!period) return alert('لم يتم العثور على الفترة المطلوبة');
+      const existing = linkedMoves(pid, key);
+      if (existing.length) { $('receivableFormPanel').style.display = 'none'; editMove(existing[0].id); $('m_periodKey').value = key; return; }
+      resetMoveForm();
+      $('m_periodKey').value = key;
+      $('m_project').value = pid;
+      $('m_type').value = 'فاتورة';
+      $('m_month').value = key === 'once' ? (p.end || '').slice(0, 7) : key;
+      $('m_amount').value = period.amount;
+      $('m_issue').value = today();
+      $('m_due').value = period.due;
+      $('m_invDue').value = isOverdue(period.due) ? 'مستحقة' : 'غير مستحقة';
+      $('m_money').value = isOverdue(period.due) ? 'مستحق' : 'غير مستحق';
+      $('m_collect').value = period.collect || p.collect || 'تحويل بنكي';
+      $('m_inv').value = p.num + '-' + (key === 'once' ? '001' : key);
+      $('receivableFormPanel').style.display = 'none';
+      $('moveFormTitle').textContent = 'تسجيل فاتورة: ' + period.label;
+      $('moveFormPanel').style.display = '';
+      updateMoveHint();
+      $('moveFormPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    function saveMove() {
+      if (!can('mE')) return alert('⛔ لا تملك صلاحية الإدخال');
+      const projectId = $('m_project').value; if (!projectId) return alert('اختر المشروع');
+      if (!$('m_inv').value.trim()) return alert('أدخل رقم الفاتورة');
+      const amount = parseFloat($('m_amount').value || 0);
+      if (amount <= 0) return alert('أدخل مبلغ الفاتورة');
+      const i = moves.findIndex(m => m.id === $('m_id').value);
+      const old = i >= 0 ? moves[i] : null;
+      if (i >= 0 && !requirePass('تعديل الحركة')) return;
+      const obj = {
+        ...(old || {}), id: $('m_id').value || uid(), projectId, type: $('m_type').value, inv: $('m_inv').value.trim(),
+        amount, issue: $('m_issue').value, due: $('m_due').value, invDue: $('m_invDue').value,
+        money: $('m_money').value, month: $('m_month').value, collect: $('m_collect').value,
+        desc: $('m_desc').value.trim(), periodKey: $('m_periodKey').value || old?.periodKey || $('m_month').value,
+        dueAmount: old?.dueAmount ?? amount, receivableLogged: old?.receivableLogged ?? (old?.money === 'محصل'),
+        bank: old?.bank || '', transferDate: old?.transferDate || '', receivableNote: old?.receivableNote || ''
+      };
+      if (i >= 0) { moves[i] = obj; logOp('تعديل فاتورة', obj.inv + ' - ' + fmt(obj.amount)); }
+      else { moves.push(obj); logOp('إضافة فاتورة', obj.inv + ' - ' + fmt(obj.amount)); }
+      save(K.moves, moves); resetMoveForm(); refreshAll();
+    }
+    function resetMoveForm() { ['m_id', 'm_periodKey', 'm_inv', 'm_amount', 'm_issue', 'm_due', 'm_desc', 'm_month'].forEach(id => $(id).value = ''); $('m_type').value = 'فاتورة'; $('m_invDue').value = 'غير مستحقة'; $('m_money').value = 'غير مستحق'; $('m_collect').value = 'تحويل بنكي'; $('moveFormTitle').textContent = 'تسجيل / تعديل الفاتورة | Invoice Entry'; $('moveFormPanel').style.display = 'none'; updateMoveHint(); }
+    function editMove(id) {
+      const m = moves.find(x => x.id === id); if (!m) return;
+      if (!requirePass('تعديل الحركة')) return;
+      $('receivableFormPanel').style.display = 'none';
+      $('m_id').value = m.id; $('m_periodKey').value = m.periodKey || (m.month === 'once' ? 'once' : m.month || '');
+      $('m_project').value = m.projectId; $('m_type').value = m.type || 'فاتورة'; $('m_inv').value = m.inv;
+      $('m_amount').value = m.amount; $('m_issue').value = m.issue; $('m_due').value = m.due; $('m_invDue').value = m.invDue || 'غير مستحقة'; $('m_money').value = m.money || 'غير مستحق';
+      $('m_month').value = m.month === 'once' ? (m.due || '').slice(0, 7) : (m.month || ''); $('m_collect').value = m.collect || 'تحويل بنكي'; $('m_desc').value = m.desc || '';
+      $('moveFormTitle').textContent = 'تعديل فاتورة ' + m.inv; $('moveFormPanel').style.display = ''; updateMoveHint(); $('moveFormPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    function fillReceivableMove() {
+      const m = moves.find(x => x.id === $('r_move').value); if (!m) return;
+      $('r_moveId').value = m.id;
+      $('r_amount').value = moveDueAmount(m);
+      $('r_status').value = m.money || 'مستحق';
+      $('r_bank').value = m.bank || '';
+      $('r_transferDate').value = m.transferDate || '';
+      $('r_note').value = m.receivableNote || '';
+    }
+    function openReceivableForPeriod(pid, key, moveId = '') {
+      if (!can('mR')) return alert('⛔ لا تملك صلاحية تسجيل الاستحقاقات');
+      const p = projects.find(x => x.id === pid); if (!p) return;
+      const period = getSchedule(p).find(s => s.key === key);
+      if (!period && !moveId) return alert('لم يتم العثور على الفترة المطلوبة');
+      const lm = moveId ? moves.filter(m => m.id === moveId) : linkedMoves(pid, key);
+      if (!lm.length) {
+        if (confirm('لا توجد فاتورة مسجلة لهذه الفترة. هل تريد إدخال فاتورة الشهر الآن؟')) openInvoiceForPeriod(pid, key);
+        return;
+      }
+      $('r_periodKey').value = key;
+      $('r_project').value = p.name + ' (' + p.num + ')';
+      $('r_period').value = period ? period.label : (moves.find(m => m.id === moveId)?.month || 'مستحق مالي');
+      $('r_move').innerHTML = lm.map(m => `<option value="${m.id}">${m.inv || 'فاتورة'} — ${fmt(m.amount)}</option>`).join('');
+      fillReceivableMove();
+      $('moveFormPanel').style.display = 'none';
+      $('receivableFormTitle').textContent = '💰 سجل مستحقات: ' + (period ? period.label : 'فاتورة يدوية');
+      $('receivableFormPanel').style.display = '';
+      $('receivableFormPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    function openReceivableForMove(id) {
+      const m = moves.find(x => x.id === id); if (!m) return;
+      const p = projects.find(x => x.id === m.projectId);
+      let key = m.periodKey || m.month || (m.due || '').slice(0, 7);
+      if (p && (p.cycle || '') === 'دفعة واحدة' && !getSchedule(p).some(s => s.key === key)) key = 'once';
+      openReceivableForPeriod(m.projectId, key, m.id);
+    }
+    function saveReceivable() {
+      if (!can('mR')) return alert('⛔ لا تملك صلاحية تسجيل الاستحقاقات');
+      const m = moves.find(x => x.id === $('r_moveId').value); if (!m) return alert('اختر فاتورة الشهر');
+      const amount = parseFloat($('r_amount').value || 0);
+      if (amount <= 0) return alert('أدخل المبلغ المستحق');
+      const status = $('r_status').value, bank = $('r_bank').value.trim(), date = $('r_transferDate').value;
+      if (status === 'محصل' && m.collect === 'تحويل بنكي' && (!bank || !date)) return alert('حدد اسم البنك وتاريخ التحويل للتحويل البنكي');
+      m.dueAmount = amount; m.money = status; m.bank = bank; m.transferDate = date; m.receivableNote = $('r_note').value.trim(); m.receivableLogged = true;
+      if (status === 'محصل') m.invDue = 'مدفوعة';
+      else m.invDue = isOverdue(m.due) ? 'مستحقة' : 'غير مستحقة';
+      save(K.moves, moves); logOp('تسجيل مستحقات', m.inv + ' - ' + fmt(amount) + (bank ? ' - ' + bank : ''));
+      resetReceivableForm(); refreshAll();
+      alert('✅ تم حفظ سجل المستحقات');
+    }
+    function resetReceivableForm() {
+      ['r_moveId', 'r_periodKey', 'r_project', 'r_period', 'r_amount', 'r_bank', 'r_transferDate', 'r_note'].forEach(id => $(id).value = '');
+      $('r_move').innerHTML = ''; $('r_status').value = 'مستحق';
+      $('receivableFormPanel').style.display = 'none';
+    }
+    function delMove(id) { if (!requirePass('حذف الحركة')) return; if (!confirm('حذف هذه الحركة؟')) return; makeAutoBackup('قبل حذف فاتورة'); const m = moves.find(x => x.id === id); moves = moves.filter(m => m.id !== id); save(K.moves, moves); logOp('حذف فاتورة', (m ? m.inv : id)); refreshAll(); }
+    function autoStatus(m) {
+      if (m.money === 'محصل' && hasReceivableRecord(m)) return '<span class="badge b-green">محصل - المستحق مسجل</span>';
+      if (m.money === 'محصل') return '<span class="badge b-amber">محصل - بانتظار تسجيل المستحق</span>';
+      if (m.due && isOverdue(m.due)) return '<span class="badge b-red">متأخرة - مستحقة الآن</span>';
+      return '<span class="badge b-blue">لم يحن الاستحقاق</span>';
+    }
+    function renderMoves() {
+      const fp = $('filterMoveProject').value, q = ($('searchMoves').value || '').trim();
+      const rows = moves.filter(m => (!fp || m.projectId === fp) && (!q || (m.inv || '').includes(q)) && invoiceState(m) === 'recorded');
+      const ib = v => v === 'مدفوعة' ? '<span class="badge b-green">مدفوعة ✔</span>' : v === 'مستحقة' ? '<span class="badge b-green">مستحقة ✅</span>' : '<span class="badge b-blue">غير مستحقة ⏳</span>';
+      $('movesBody').innerHTML = rows.map(m => {
+        const state = invoiceState(m);
+        const due = state === 'due' ? `<button class="due-amount-link" onclick="openReceivableForMove('${m.id}')">${fmt(moveDueAmount(m))}</button>` : state === 'recorded' ? `<span class="amount-recorded">${fmt(moveDueAmount(m))}</span>` : '—';
+        const status = state === 'recorded' ? '<span class="badge b-green">مسجلة / محصلة ✔</span>' : state === 'due' ? '<span class="badge b-red">مستحقة ❌</span>' : '<span class="badge b-blue">غير مستحقة ⏳</span>';
+        return `<tr class="row-${state}"><td>${projName(m.projectId)}<br><small>${projNum(m.projectId)}${projClient(m.projectId) ? ' | ' + projClient(m.projectId) : ''}</small></td>
+      <td>${can('mE') ? `<button class="period-link" onclick="editMove('${m.id}')">${m.inv || '—'}</button>` : `<b>${m.inv || '—'}</b>`}<br><small style="color:#888">${m.desc || ''}</small></td>
+      <td>${m.month || '-'}<br><small>${m.collect || ''}</small></td>
+      <td><b>${fmt(m.amount)}</b></td><td>${due}</td>
+      <td>${m.due || '-'}</td><td>${ib(m.invDue)}</td><td>${status}</td>
+      <td>${m.bank || '—'}<br><small>${dsp(m.transferDate)}</small>${m.receivableNote ? `<br><small>${m.receivableNote}</small>` : ''}</td>
+      <td>${autoStatus(m)}</td>
+      <td class="actions">${can('mE') ? `<button class="action-menu-btn" title="تعديل أو حذف" onclick="openActionMenu('تعديل الحركة','editMove','${escHtml(m.id)}','delMove','${escHtml(m.id)}')">✏️</button>` : ''}${can('mR') ? `<button class="btn-g" onclick="openReceivableForMove('${m.id}')">المستحق</button>` : ''}${!can('mE') && !can('mR') ? '<span style="color:#999">عرض فقط</span>' : ''}</td></tr>`;
+      }).join('') || '<tr><td colspan="11" style="text-align:center;color:#999">لا توجد حركات</td></tr>';
+    }
+
+    /* ---- مصاريف ---- */
+    function saveExpense() {
+      if (!can('eE')) return alert('⛔ لا تملك صلاحية الإدخال');
+      const projectId = $('e_project').value; if (!projectId) return alert('اختر المشروع');
+      const amount = parseFloat($('e_amount').value || 0); if (!amount) return alert('أدخل المبلغ');
+      if ($('e_date').value && !$('e_date_iso').value) return alert('أدخل تاريخاً ميلادياً صحيحاً');
+      const id = $('e_id').value || uid();
+      const i = expenses.findIndex(e => e.id === id);
+      const obj = { id, projectId, moveId: $('e_move').value || '', cat: $('e_cat').value, amount, date: $('e_date_iso').value || today(), desc: $('e_desc').value.trim() };
+      if (i >= 0) expenses[i] = obj;
+      else expenses.push(obj);
+      save(K.exps, expenses);
+      resetExpForm();
+      closeExpenseForm();
+      refreshAll();
+      if (typeof showSystemNotification === 'function') showSystemNotification(i >= 0 ? '✅ تم تعديل المصروف ومزامنته سحابياً مباشرة' : '✅ تم حفظ المصروف في Supabase بنجاح ☁️');
+    }
+    function resetExpForm() { $('e_id').value = ''; $('e_project').value = ''; $('e_move').innerHTML = '<option value="">— بدون ربط —</option>'; $('e_cat').value = 'رواتب'; $('e_amount').value = ''; $('e_desc').value = ''; $('e_date').value = ''; $('e_date_iso').value = ''; $('expFormTitle').textContent = 'تفاصيل المصروف'; }
+    function showExpenseForm() { $('expFormPanel').style.display = ''; window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    function openExpenseForm() { if (!can('eE')) return alert('⛔ لا تملك صلاحية الإدخال'); resetExpForm(); showExpenseForm(); }
+    function closeExpenseForm() { $('expFormPanel').style.display = 'none'; }
+    function editExp(id) {
+      const e = expenses.find(x => x.id === id); if (!e) return;
+      if (!requirePass('تعديل المصروف')) return;
+      $('e_id').value = e.id; $('e_project').value = e.projectId; fillMoveLink(); $('e_move').value = e.moveId || '';
+      $('e_cat').value = e.cat; $('e_amount').value = e.amount; $('e_date').value = dateDisplayValue(e.date); $('e_date_iso').value = e.date || ''; $('e_desc').value = e.desc || ''; $('expFormTitle').textContent = 'تعديل المصروف'; showExpenseForm();
+    }
+    function delExp(id) { if (!requirePass('حذف المصروف')) return; if (!confirm('حذف المصروف؟')) return; makeAutoBackup('قبل حذف مصروف'); const e = expenses.find(x => x.id === id); expenses = expenses.filter(e => e.id !== id); save(K.exps, expenses); logOp('حذف مصروف', (e ? e.cat + ' - ' + fmt(e.amount) : id)); refreshAll(); }
+    function fillMoveLink() {
+      const pid = $('e_project').value;
+      $('e_move').innerHTML = '<option value="">— بدون ربط —</option>' + moves.filter(m => m.projectId === pid).map(m => `<option value="${m.id}">${m.inv} — ${fmt(m.amount)}</option>`).join('');
+    }
+    function renderExpenses() {
+      const fp = $('filterExpProject').value;
+      const rows = expenses.filter(e => !fp || e.projectId === fp);
+      $('expensesBody').innerHTML = rows.map(e => {
+        const mv = moves.find(m => m.id === e.moveId);
+        return `<tr><td>${projName(e.projectId)}${projClient(e.projectId) ? '<br><small style="color:#888">' + projClient(e.projectId) + '</small>' : ''}</td><td><span class="badge b-gray">${e.cat}</span></td><td>${e.desc || '-'}</td>
+    <td>${mv ? mv.inv : '—'}</td><td><b>${fmt(e.amount)}</b></td><td>${dsp(e.date)}</td>
+    <td class="actions">${can('eE') ? `<button class="action-menu-btn" title="تعديل أو حذف" onclick="openActionMenu('تعديل المصروف','editExp','${escHtml(e.id)}','delExp','${escHtml(e.id)}')">✏️</button>` : '<span style="color:#999">عرض فقط</span>'}</td></tr>`;
+      }).join('') || '<tr><td colspan="7" style="text-align:center;color:#999">لا توجد مصاريف</td></tr>';
+    }
+
+    /* ---- تفاصيل المصاريف (من الرئيسية) ---- */
+    function openExpensesDetail() {
+      const total = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+      const byProject = projects.map(p => {
+        const list = expenses.filter(e => e.projectId === p.id);
+        return { p, list, total: list.reduce((s, e) => s + Number(e.amount || 0), 0) };
+      }).filter(r => r.list.length).sort((a, b) => b.total - a.total);
+      const orphans = expenses.filter(e => !projects.some(p => p.id === e.projectId));
+      const byCat = {};
+      expenses.forEach(e => { const k = e.cat || 'أخرى'; byCat[k] = (byCat[k] || 0) + Number(e.amount || 0); });
+      const cats = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
+      const maxCat = cats.length ? cats[0][1] : 1;
+      const details = expenses.slice().sort((a, b) => String(b.date || '').localeCompare(String(a.date || ''))).map(e => {
+        const mv = moves.find(m => m.id === e.moveId);
+        return `<tr><td>${dsp(e.date)}</td><td><b>${escHtml(projName(e.projectId))}</b><br><small style="color:#888">${escHtml(projClient(e.projectId) || '—')}</small></td>
+      <td><span class="badge b-gray">${escHtml(e.cat || 'أخرى')}</span></td><td>${escHtml(e.desc || '—')}</td>
+      <td>${mv ? escHtml(mv.inv) : '—'}</td><td><b style="color:var(--red)">${fmt(e.amount)}</b></td></tr>`;
+      }).join('');
+      const projRows = byProject.map(r => {
+        const pct = total ? Math.round(r.total / total * 100) : 0;
+        return `<tr><td><b>${escHtml(r.p.name)}</b><br><small style="color:#888">${escHtml(r.p.num || '')}</small></td><td>${r.list.length}</td><td><b>${fmt(r.total)}</b></td><td style="min-width:150px"><div class="chart-track"><div class="chart-bar expense" style="width:${pct}%"></div></div> <small>${pct}%</small></td></tr>`;
+      }).join('') || '<tr><td colspan="4" style="text-align:center;color:#999">لا توجد مصاريف</td></tr>';
+      const catRows = cats.map(([k, v]) => `<div class="chart-row"><div class="chart-label" title="${escHtml(k)}">${escHtml(k)}</div><div class="chart-bars"><div class="chart-line"><span>المبلغ</span><div class="chart-track"><div class="chart-bar expense" style="width:${Math.round(v / maxCat * 100)}%"></div></div><b>${fmt(v)}</b></div></div></div>`).join('') || '<div class="chart-empty">لا توجد بيانات</div>';
+      $('expDetailContent').innerHTML = `
+    <div class="value-grid" style="margin-bottom:12px">
+      <div class="value-row total"><span>إجمالي المصاريف</span><b>${fmt(total)}</b></div>
+      <div class="value-row"><span>عدد المصروفات</span><b>${expenses.length}</b></div>
+      <div class="value-row"><span>مشاريع عليها مصاريف</span><b>${byProject.length}</b></div>
+      <div class="value-row"><span>أعلى بند</span><b>${cats.length ? escHtml(cats[0][0]) : '—'}</b></div>
+    </div>
+    <h4 class="detail-h">المصاريف حسب المشروع</h4>
+    <div class="tw"><table><thead><tr><th>المشروع<br><small>Project</small></th><th>عدد المصروفات<br><small>Count</small></th><th>المبلغ<br><small>Amount</small></th><th>النسبة<br><small>Share</small></th></tr></thead><tbody>${projRows}${orphans.length ? `<tr><td colspan="4" style="color:var(--red)">${orphans.length} مصروف بدون مشروع مرتبط</td></tr>` : ''}</tbody></table></div>
+    <h4 class="detail-h">المصاريف حسب البند</h4>
+    <div class="report-chart">${catRows}</div>
+    <h4 class="detail-h">تفاصيل كل مصروف</h4>
+    <div class="tw"><table><thead><tr><th>التاريخ<br><small>Date</small></th><th>المشروع<br><small>Project</small></th><th>البند<br><small>Category</small></th><th>الوصف<br><small>Description</small></th><th>الفاتورة<br><small>Invoice</small></th><th>المبلغ<br><small>Amount</small></th></tr></thead>
+      <tbody>${details || '<tr><td colspan="6" style="text-align:center;color:#999">لا توجد مصاريف</td></tr>'}</tbody></table></div>
+    <div class="toolbar" style="margin-top:14px">
+      <button class="btn btn-g" onclick="closeExpDetail();go('expenses')">عرض صفحة المصاريف</button>
+      <button class="btn btn-g" onclick="closeExpDetail()">إغلاق ✖</button>
+    </div>`;
+      $('expDetailModal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeExpDetail() {
+      $('expDetailModal').classList.remove('open');
+      if (!document.querySelector('.modal.open')) document.body.style.overflow = '';
+    }
+
+    /* ---- تفاصيل قيمة المشروع ---- */
+    function projectValueLink(p) {
+      const before = Number(p.before || 0), tax = Number(p.tax || 0);
+      const after = Number(p.after ?? (before + before * tax / 100));
+      return `<button class="value-link" onclick="showProjectValue('${p.id}')" title="اضغط لعرض تفاصيل قيمة المشروع">${fmt(after)}</button>`;
+    }
+    function showProjectValue(id) {
+      const p = projects.find(x => x.id === id); if (!p) return;
+      const before = Number(p.before || 0), tax = Number(p.tax || 0);
+      const after = Number(p.after ?? (before + before * tax / 100));
+      $('valueModalTitle').textContent = 'قيمة المشروع: ' + p.name;
+      $('valueModalContent').innerHTML = `
+    <div class="value-subtitle">رقم المشروع: ${escHtml(p.num || '—')}${p.client ? ' — العميل: ' + escHtml(p.client) : ''}</div>
+    <div class="value-main"><span class="label">المبلغ بعد الضريبة</span><strong class="amount">${fmt(after)}</strong><span class="note">الإجمالي النهائي</span></div>
+    <div class="value-grid">
+      <div class="value-row"><span>نوع الخدمة</span><b>${serviceTypeBadge(p.serviceType)}</b></div>
+      <div class="value-row"><span>المبلغ قبل الضريبة</span><b>${fmt(before)}</b></div>
+      <div class="value-row"><span>نسبة الضريبة</span><b>${fmt(tax)}%</b></div>
+      <div class="value-row total"><span>المبلغ بعد الضريبة</span><b>${fmt(after)}</b></div>
+    </div>`;
+      $('valueModal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeProjectValue() {
+      $('valueModal').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    /* ---- حساب المتبقي من حركة المشروع والجدولة ---- */
+    function remainingInvoicesForProject(pid) {
+      const p = projects.find(x => x.id === pid); if (!p) return 0;
+      return getSchedule(p).filter(s => linkedMoves(pid, s.key).length === 0).length;
+    }
+    function remainingInstallmentsForProject(pid) {
+      const p = projects.find(x => x.id === pid); if (!p) return 0;
+      const pm = moves.filter(m => m.projectId === pid);
+      const sched = getSchedule(p);
+      /* لا توجد جدولة ثابتة في نظام «حسب الإنجاز»، فالمتبقي هو الحركات غير المحصلة. */
+      if (!sched.length) return p.cycle === 'حسب الإنجاز' ? pm.filter(m => m.money !== 'محصل' || !hasReceivableRecord(m)).length : 0;
+      return sched.filter(s => {
+        const lm = linkedMoves(pid, s.key);
+        const actual = lm.reduce((sum, m) => sum + Number(m.amount || 0), 0);
+        const fullyEntered = actual + 0.01 >= Number(s.amount || 0);
+        return !fullyEntered || !lm.some(m => m.money === 'محصل' && hasReceivableRecord(m));
+      }).length;
+    }
+
+    /* ---- تقارير + لوحة ---- */
+    function projectStats(pid) {
+      const p = projects.find(x => x.id === pid); if (!p) return null;
+      const pm = moves.filter(m => m.projectId === pid), pe = expenses.filter(e => e.projectId === pid);
+      const totalInv = pm.reduce((s, m) => s + +m.amount, 0);
+      const got = pm.filter(m => invoiceState(m) === 'recorded').reduce((s, m) => s + moveDueAmount(m), 0);
+      const pending = projectDueAmount(pid);
+      const exp = pe.reduce((s, e) => s + +e.amount, 0);
+      const contract = Number(p.after || 0);
+      return { p, contract, totalInv, got, pending, exp, net: contract - exp };
+    }
+    function reportRows() {
+      const q = ($('searchReports')?.value || '').trim().toLowerCase();
+      const svc = $('filterReportServiceType')?.value || '';
+      const st = $('filterReportStatus')?.value || '';
+      const rs = $('filterReportResult')?.value || '';
+      return projects.map(p => ({ p, s: projectStats(p.id) })).filter(r => r.s)
+        .filter(r => !q || [r.p.num, r.p.name, r.p.client, r.p.serviceType, r.p.status].some(v => String(v || '').toLowerCase().includes(q)))
+        .filter(r => {
+          if (!svc) return true;
+          if (svc === 'خدمة صيانة' || svc === 'خدمي صيانة' || svc === 'صيانة') return hasMaintenance(r.p);
+          if (svc === 'خدمة تركيب' || svc === 'خدمي تركيب' || svc === 'تركيب') return hasInstallation(r.p);
+          return r.p.serviceType === svc;
+        })
+        .filter(r => {
+          const done = isProjectComplete(r.p.id) || (r.p.status || '') === 'منجز';
+          if (st === 'منجز') return done;
+          if (st === 'تحت العمل') return !done;
+          return true;
+        })
+        .filter(r => {
+          if (rs === 'رابح') return r.s.net > 0;
+          if (rs === 'خاسر') return r.s.net < 0;
+          return true;
+        });
+    }
+    function resetReportSearch() {
+      if ($('searchReports')) $('searchReports').value = '';
+      if ($('filterReportServiceType')) $('filterReportServiceType').value = '';
+      if ($('filterReportStatus')) $('filterReportStatus').value = '';
+      if ($('filterReportResult')) $('filterReportResult').value = '';
+      renderReports();
+    }
+    function renderReportKpis(rows) {
+      const contract = rows.reduce((sum, r) => sum + r.s.contract, 0), expenses = rows.reduce((sum, r) => sum + r.s.exp, 0), net = contract - expenses;
+      const wins = rows.filter(r => r.s.net > 0).length, losses = rows.filter(r => r.s.net < 0).length;
+      const done = rows.filter(r => isProjectComplete(r.p.id) || (r.p.status || '') === 'منجز').length, working = rows.length - done;
+      const withWarranty = rows.filter(r => Number(r.p.warrantyMonths || 0) > 0);
+      const avgWarranty = withWarranty.length ? Math.round(withWarranty.reduce((s, r) => s + Number(r.p.warrantyMonths || 0), 0) / withWarranty.length) : 0;
+      const totalWarranty = rows.reduce((s, r) => s + Number(r.p.warrantyMonths || 0), 0);
+      $('reportKpis').innerHTML = `<div class="report-kpi"><div class="t">إجمالي العقود بعد الضريبة</div><div class="v">${fmt(contract)}</div></div><div class="report-kpi"><div class="t">إجمالي المصاريف</div><div class="v">${fmt(expenses)}</div></div><div class="report-kpi"><div class="t">الفرق بعد المصاريف</div><div class="v ${net >= 0 ? 'positive' : 'negative'}">${fmt(net)}</div></div><div class="report-kpi"><div class="t">مشاريع رابحة / خاسرة</div><div class="v">${wins} / ${losses}</div></div><div class="report-kpi"><div class="t">منجزة / تحت العمل</div><div class="v"><span style="color:var(--green)">${done}</span> / <span style="color:var(--amber)">${working}</span></div></div><div class="report-kpi"><div class="t">إجمالي مدة الضمان</div><div class="v">${totalWarranty ? totalWarranty + ' شهر' : '—'}</div><div class="card-note">متوسط ${withWarranty.length ? avgWarranty : 0} شهر — ${withWarranty.length} مشروع بضمان</div></div>`;
+    }
+    function renderReportChart(rows) {
+      if (!can('rG')) { $('reportChart').innerHTML = '<div class="chart-empty">⛔ لا تملك صلاحية عرض الرسوم البيانية</div>'; return; }
+      const max = Math.max(1, ...rows.flatMap(r => [r.s.contract, r.s.exp]));
+      $('reportChart').innerHTML = rows.length ? rows.map(r => {
+        const contractWidth = Math.max(0, Math.min(100, r.s.contract / max * 100)), expenseWidth = Math.max(0, Math.min(100, r.s.exp / max * 100));
+        const result = r.s.net > 0 ? '<span class="badge b-green">رابح ✅</span>' : r.s.net < 0 ? '<span class="badge b-red">خاسر ❌</span>' : '<span class="badge b-amber">متعادل</span>';
+        return `<div class="chart-row"><div class="chart-label" title="${escHtml(r.p.name)}">${escHtml(r.p.name)}</div><div class="chart-bars"><div class="chart-line"><span>قيمة العقد</span><div class="chart-track"><div class="chart-bar contract" style="width:${contractWidth}%"></div></div><b>${fmt(r.s.contract)}</b></div><div class="chart-line"><span>المصاريف</span><div class="chart-track"><div class="chart-bar expense" style="width:${expenseWidth}%"></div></div><b>${fmt(r.s.exp)}</b></div><div style="font-size:12px">صافي المشروع: <b>${fmt(r.s.net)}</b> ${result}</div></div></div>`;
+      }).join('') : '<div class="chart-empty">لا توجد بيانات كافية لعرض المخطط</div>';
+    }
+    function renderReports() {
+      const rows = reportRows();
+      const all = projects.filter(p => projectStats(p.id)).length;
+      renderReportKpis(rows); renderReportChart(rows);
+      const rc = $('reportCount');
+      if (rc) rc.textContent = rows.length === all ? `${all} مشروع` : `${rows.length} نتيجة من ${all} مشروع`;
+      $('reportsBody').innerHTML = rows.map(({ p, s }) => {
+        const b = s.net > 0 ? '<span class="badge b-green">رابح ✅</span>' : s.net < 0 ? '<span class="badge b-red">خاسر ❌</span>' : '<span class="badge b-amber">متعادل</span>';
+        return `<tr><td><b>${escHtml(p.name)}</b><br><small>${escHtml(p.num || '')}</small></td><td>${escHtml(p.client || '—')}</td><td class="col-svc-type">${serviceTypeBadge(p.serviceType)}</td>
+    <td>${statusBadge(p)}</td><td>${projectWarrantyText(p)}</td><td>${projectValueLink(p)}</td><td>${fmt(s.totalInv)}</td>
+    <td><b>${fmt(s.got)}</b></td><td><b>${fmt(s.pending)}</b></td>
+    <td><b>${fmt(s.exp)}</b></td><td><b style="color:${s.net >= 0 ? 'var(--green)' : 'var(--red)'}">${fmt(s.net)}</b></td><td>${b}</td></tr>`;
+      }).join('') || `<tr><td colspan="12" style="text-align:center;color:#999;padding:22px">${all ? 'لا توجد نتائج مطابقة للبحث أو التصفية' : 'لا توجد مشاريع'}</td></tr>`;
+    }
+    function renderDash() {
+      $('stProjects').textContent = projects.length;
+      const contracts = projects.reduce((s, p) => s + +p.after, 0);
+      const got = moves.filter(m => invoiceState(m) === 'recorded').reduce((s, m) => s + moveDueAmount(m), 0);
+      const due = projects.reduce((sum, p) => sum + projectDueAmount(p.id), 0);
+      const exp = expenses.reduce((s, e) => s + +e.amount, 0);
+      $('stContracts').textContent = fmt(contracts);
+      $('stGot').textContent = fmt(got);
+      $('stDue').textContent = fmt(due);
+      $('stExp').textContent = fmt(exp);
+      const remainingInvoices = projects.reduce((sum, p) => sum + remainingInvoicesForProject(p.id), 0);
+      const remainingInstallments = projects.reduce((sum, p) => sum + remainingInstallmentsForProject(p.id), 0);
+      $('stRemainingInvoices').textContent = fmt(remainingInvoices);
+      $('stRemainingInstallments').textContent = fmt(remainingInstallments);
+      $('heroCount').textContent = projects.length;
+      $('heroValue').textContent = fmt(contracts);
+      const q = ($('searchDashboardProjects')?.value || '').trim();
+      const visible = projects.filter(p => !q || [p.name, p.num, p.client, p.serviceType].some(v => (v || '').includes(q)));
+      $('dashRecent').innerHTML = visible.slice().reverse().map(p => {
+        return `<tr><td><b>${escHtml(p.name)}</b><br><small style="color:#888">${escHtml(p.num)}</small></td><td>${escHtml(p.client || '—')}</td><td class="col-svc-type">${serviceTypeBadge(p.serviceType)}</td><td>${dsp(p.start)}</td><td>${dsp(p.end)}</td><td>${projectValueLink(p)}<br><small>بعد الضريبة</small></td><td>${projectWarrantyText(p)}</td><td><b>${fmt(p.monthly)}</b><br><small>${escHtml(p.cycle || '')} | ${escHtml(p.collect || '')}</small></td><td>${statusBadge(p)}</td></tr>`;
+      }).join('') || '<tr><td colspan="9" style="text-align:center;color:#999">لا توجد مشاريع مطابقة</td></tr>';
+    }
+
+    /* ---- مستخدمين ---- */
+    function getPerms() { return { pV: +$('pm_pV').checked, pE: +$('pm_pE').checked, mV: +$('pm_mV').checked, mE: +$('pm_mE').checked, mR: +$('pm_mR').checked, eV: +$('pm_eV').checked, eE: +$('pm_eE').checked, rV: +$('pm_rV').checked, rG: +$('pm_rG').checked }; }
+    function saveUser() {
+      if (!isAdmin()) return alert('⛔ الحساب الرئيسي فقط');
+      if (!requirePass('إضافة / تعديل مستخدم')) return;
+      const noRaw = $('u_no').value.trim(), n = $('u_name').value.trim(), pw = $('u_pass').value;
+      if (noRaw === '' || !n || !pw) return alert('أدخل رقم المستخدم والاسم وكلمة المرور');
+      const role = $('pm_admin').checked ? 'admin' : 'user';
+      // الحساب الرئيسي دائماً رقمه 0
+      const no = role === 'admin' ? 0 : Number(noRaw || 0);
+      if (role !== 'admin' && (isNaN(no) || no < 0 || !Number.isInteger(no))) return alert('رقم المستخدم يجب أن يكون رقماً صحيحاً');
+      const obj = { no, username: n, password: pw, role, perms: role === 'admin' ? { ...ALL_PERMS } : getPerms() };
+      const old = $('u_old').value;
+      if (old) {
+        if (users.some(u => u.username !== old && Number(u.no) === no)) return alert('رقم المستخدم مستخدم في حساب آخر');
+        users[users.findIndex(u => u.username === old)] = obj; logOp('تعديل مستخدم', 'رقم ' + no + ' — ' + n);
+      }
+      else {
+        if (users.some(u => u.username === n)) return alert('اسم المستخدم موجود');
+        if (users.some(u => Number(u.no) === no)) return alert('رقم المستخدم مستخدم في حساب آخر');
+        users.push(obj); logOp('إضافة مستخدم', 'رقم ' + no + ' — ' + n);
+      }
+      save(K.users, users); resetUserForm(); renderUsers();
+    }
+    function nextUserNo() { let n = 0; while (users.some(u => Number(u.no) === n)) n++; return n; }
+    function resetUserForm() { $('u_old').value = ''; $('u_no').value = nextUserNo(); $('u_no').readOnly = false; $('u_name').value = ''; $('u_pass').value = '';['pm_pV', 'pm_pE', 'pm_mV', 'pm_mE', 'pm_mR', 'pm_eV', 'pm_eE', 'pm_rV', 'pm_rG'].forEach(id => $(id).checked = true); $('pm_admin').checked = false; }
+    function editUser(n) {
+      const u = users.find(x => x.username === n); if (!u) return;
+      if (!requirePass('تعديل مستخدم')) return;
+      $('u_old').value = u.username; $('u_no').value = u.no ?? ''; $('u_name').value = u.username; $('u_pass').value = u.password;
+      const map = { pV: 'pm_pV', pE: 'pm_pE', mV: 'pm_mV', mE: 'pm_mE', mR: 'pm_mR', eV: 'pm_eV', eE: 'pm_eE', rV: 'pm_rV', rG: 'pm_rG' };
+      Object.entries(u.perms || {}).forEach(([k, v]) => { if (map[k]) $(map[k]).checked = !!v; });
+      $('pm_admin').checked = u.role === 'admin';
+      $('u_no').readOnly = u.role === 'admin';
+      if (u.role === 'admin') $('u_no').value = 0;
+    }
+    function delUser(n) {
+      if (n === 'admin') return alert('لا يمكن حذف الحساب الرئيسي'); if (!requirePass('حذف مستخدم')) return; if (!confirm('حذف ' + n + '؟')) return; makeAutoBackup('قبل حذف مستخدم');
+      users = users.filter(u => u.username !== n); save(K.users, users); logOp('حذف مستخدم', n); renderUsers();
+    }
+    function renderUsers() {
+      $('usersBody').innerHTML = users.slice().sort((a, b) => Number(a.no) - Number(b.no)).map(u => `<tr><td style="text-align:center"><b>${u.no ?? '—'}</b></td><td><b>${escHtml(u.username)}</b></td><td>${u.role === 'admin' ? '<span class="badge b-green">رئيسي</span>' : '<span class="badge b-blue">مستخدم</span>'}</td>
+  <td style="font-size:12px">${u.role === 'admin' ? 'كل الصلاحيات' : Object.entries(u.perms || {}).filter(([k, v]) => v).map(([k]) => ({ pV: 'رؤية المشاريع', pE: 'إضافة/تعديل المشاريع', mV: 'عرض حركة المشاريع والفواتير', mE: 'إدخال الفواتير', mR: 'تسجيل الاستحقاقات والتحصيل', eV: 'رؤية المصاريف', eE: 'إدخال المصاريف', rV: 'عرض التقارير', rG: 'عرض الرسوم البيانية' }[k])).filter(Boolean).join('، ') || 'بدون'}</td>
+  <td class="actions"><button class="action-menu-btn" title="تعديل أو حذف" onclick="openActionMenu('تعديل المستخدم','editUser','${escHtml(u.username)}','${u.username !== 'admin' ? 'delUser' : ''}','${escHtml(u.username)}')">✏️</button></td></tr>`).join('');
+    }
+
+    function fillProjectSelects() {
+      const opts = projects.map(p => `<option value="${p.id}">${p.name} (${p.num})${p.client ? ' — ' + p.client : ''}</option>`).join('');
+      if ($('m_project')) $('m_project').innerHTML = opts || '<option value="">— أضف مشروعاً أولاً —</option>';
+      if ($('e_project')) $('e_project').innerHTML = opts || '<option value="">— أضف مشروعاً أولاً —</option>';
+      const f = '<option value="">كل المشاريع</option>' + opts;
+      const c1 = $('filterMoveProject')?.value || '', c2 = $('filterExpProject')?.value || '';
+      if ($('filterMoveProject')) $('filterMoveProject').innerHTML = f;
+      if ($('filterExpProject')) $('filterExpProject').innerHTML = f;
+      if ($('filterMoveProject')) $('filterMoveProject').value = c1;
+      if ($('filterExpProject')) $('filterExpProject').value = c2;
+      const cs = $('schedProject')?.value || '';
+      if ($('schedProject')) $('schedProject').innerHTML = opts || '<option value="">— لا مشاريع —</option>';
+      if ($('schedProject') && cs) $('schedProject').value = cs;
+      const svcFilter = $('filterReportServiceType');
+      if (svcFilter) {
+        const curSvc = svcFilter.value;
+        svcFilter.innerHTML = '<option value="">كل أنواع الخدمات</option>' + serviceTypes.map(s => `<option value="${escHtml(s.name)}">${escHtml(s.name)}</option>`).join('');
+        if (curSvc) svcFilter.value = curSvc;
+      }
+      if ($('e_project')) fillMoveLink();
+      if ($('m_project')) updateMoveHint();
+    }
+    function refreshAll() {
+      updateSvcColVisibilityUI();
+      let migrated = false;
+      projects.forEach(p => {
+        if (!p.serviceType || p.serviceType.trim() === '') {
+          p.serviceType = 'غير محدد';
+          migrated = true;
+        } else if (p.serviceType === 'خدمي صيانة') {
+          p.serviceType = 'خدمة صيانة';
+          migrated = true;
+        } else if (p.serviceType === 'خدمي تركيب') {
+          p.serviceType = 'خدمة تركيب';
+          migrated = true;
+        }
+      });
+      if (migrated) save(K.projects, projects);
+      renderServiceTypeOptions();
+      fillProjectSelects();
+      renderMovementProjectDetails();
+      renderRecordedInvoices();
+      renderInvoiceStatus();
+      renderNotificationCount();
+      renderProjects();
+      renderExpenses();
+      renderReports();
+      renderDash();
+      renderBackups();
+      if (isAdmin()) { renderUsers(); renderLog(); }
+    }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeProjectValue(); closeInvoiceModal(); closeAmountModal(); closeReceivableModal(); closeRecordedModal(); closeActionMenu(); closeExpDetail(); closePassModal(); closeNotifications(); closeDbSettingsModal(); closeServiceTypesModal(); } });
+    initDatePickers();
+    toggleMonthly();
+
+    // ─── إدارة نافذة إعدادات قاعدة بيانات Supabase ───────────────────
+    function openDbSettingsModal() {
+      const cfg = typeof getSupabaseConfig === 'function' ? getSupabaseConfig() : {};
+      if ($('sb_url')) $('sb_url').value = (cfg.url && !cfg.url.includes('YOUR_PROJECT_ID')) ? cfg.url : '';
+      if ($('sb_key')) $('sb_key').value = (cfg.anonKey && !cfg.anonKey.includes('YOUR_ANON_KEY')) ? cfg.anonKey : '';
+      updateDbLiveStatus();
+      $('dbSettingsModal').classList.add('open');
+    }
+    function closeDbSettingsModal() {
+      if ($('dbSettingsModal')) $('dbSettingsModal').classList.remove('open');
+    }
+    function updateDbLiveStatus() {
+      const box = $('dbLiveStatusAlert');
+      if (!box) return;
+      if (typeof SupabaseState !== 'undefined' && SupabaseState.connected) {
+        box.style.background = 'var(--success-bg)';
+        box.style.border = '1.5px solid var(--success-border)';
+        box.style.color = 'var(--success-text)';
+        box.innerHTML = '🟢 <span>قاعدة بيانات Supabase <b>متصلة وتعمل بنجاح</b>، والمزامنة السحابية نشطة.</span>';
+      } else if (typeof SupabaseState !== 'undefined' && SupabaseState.error && !SupabaseState.error.includes('لم يتم ضبط')) {
+        box.style.background = 'var(--danger-bg)';
+        box.style.border = '1.5px solid var(--danger-border)';
+        box.style.color = 'var(--danger-text)';
+        box.innerHTML = '❌ <span>تعذر الاتصال بالسحابة: ' + escHtml(SupabaseState.error) + '</span>';
+      } else {
+        box.style.background = 'var(--warning-bg)';
+        box.style.border = '1.5px solid var(--warning-border)';
+        box.style.color = 'var(--warning-text)';
+        box.innerHTML = '⚙️ <span>النظام يعمل في <b>الوضع المحلي</b> — أدخل رابط المشروع ومفتاح anon key لربط السحابة فوراً.</span>';
+      }
+    }
+    async function saveAndConnectSupabase() {
+      const url = ($('sb_url')?.value || '').trim();
+      const key = ($('sb_key')?.value || '').trim();
+      if (!url || !key) {
+        alert('يرجى إدخال رابط المشروع ومفتاح API معاً.');
+        return;
+      }
+      const btn = event?.target;
+      const oldText = btn ? btn.textContent : '';
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ جاري الفحص...'; }
+
+      try {
+        const test = await testSupabaseConnection(url, key);
+        if (!test.ok) {
+          if (btn) { btn.disabled = false; btn.textContent = oldText; }
+          alert('❌ فشل الاتصال بقاعدة البيانات:\n' + test.error);
+          return;
+        }
+
+        await saveSupabaseConfig(url, key);
+        if (btn) btn.textContent = '⏳ جاري المزامنة...';
+        await triggerManualSync(false);
+        updateDbLiveStatus();
+        if (btn) { btn.disabled = false; btn.textContent = oldText; }
+        alert('✅ تم الاتصال بقاعدة بيانات Supabase بنجاح، وتمت مزامنة جميع البيانات!');
+      } catch (e) {
+        if (btn) { btn.disabled = false; btn.textContent = oldText; }
+        alert('حدث خطأ أثناء الربط: ' + e.message);
+      }
+    }
+    async function triggerManualSync(showAlert = true) {
+      if (typeof SupabaseState === 'undefined' || !SupabaseState.connected) {
+        if (showAlert) alert('⚠️ النظام غير متصل بـ Supabase حالياً. يرجى ضبط الإعدادات واختبار الاتصال أولاً.');
+        return;
+      }
+      if (typeof db_syncAll === 'function') {
+        showSyncBadge('syncing');
+        const synced = await db_syncAll();
+        if (synced) {
+          if (synced.projects) projects = synced.projects;
+          if (synced.moves) moves = synced.moves;
+          if (synced.expenses) expenses = synced.expenses;
+          if (synced.serviceTypes) serviceTypes = synced.serviceTypes;
+          if (synced.users) { users = synced.users; fixUserNumbers(); }
+          refreshAll();
+          showSyncBadge('connected');
+          updateDbLiveStatus();
+          if (showAlert) alert('✅ تمت مزامنة جميع البيانات مع السحابة بنجاح!');
+        } else {
+          showSyncBadge('error');
+          updateDbLiveStatus();
+          if (showAlert) alert('❌ تعذرت المزامنة، تأكد من الاتصال بالإنترنت وصلاحيات الجداول.');
+        }
+      }
+    }
+    // ─── تهيئة Supabase ومزامنة البيانات عند التشغيل وتلقائياً ───────────
+    (async function initApp() {
+      // 1. محاولة الاتصال بـ Supabase وجلب وتوحيد البيانات تلقائياً
+      if (typeof db_syncAll === 'function') {
+        const synced = await db_syncAll();
+        if (synced) {
+          if (synced.projects) projects = synced.projects;
+          if (synced.moves) moves = synced.moves;
+          if (synced.expenses) expenses = synced.expenses;
+          if (synced.serviceTypes) serviceTypes = synced.serviceTypes;
+          if (synced.users && synced.users.length > 0) {
+            users = synced.users;
+            fixUserNumbers();
+            users.forEach(u => { if (u.username === 'admin' && u.password === 'admin123') u.password = '301143'; if (u.role !== 'admin') { u.perms = u.perms || {}; if (u.perms.mR === undefined) u.perms.mR = 1; if (u.perms.rG === undefined) u.perms.rG = 1; } });
+          }
+          projects.forEach(p => { if (!p.cycle) { p.cycle = 'شهري'; p.collect = 'تحويل بنكي'; } if (!p.status) p.status = 'تحت العمل'; if (p.client === undefined) p.client = ''; if (!p.serviceType || p.serviceType === 'خدمي صيانة') p.serviceType = 'خدمة صيانة'; if (p.serviceType === 'خدمي تركيب') p.serviceType = 'خدمة تركيب'; if (!p.months) p.months = monthDiffSafe(p.start, p.end); if (p.warrantyMonths == null) p.warrantyMonths = 0; });
+          projects.forEach(p => {
+            if (isPeriodic(p.cycle) && p.start && p.end && Number(p.after || 0) > 0) {
+              const count = Math.max(1, Math.ceil(monthDiffSafe(p.start, p.end) / cycleStep(p.cycle)));
+              p.monthly = Math.round(Number(p.after) / count * 100) / 100;
+            } else if (!isPeriodic(p.cycle)) p.monthly = 0;
+          });
+          refreshAll();
+        }
+      }
+
+      // 2. فحص جلسة تسجيل الدخول
+      const s = localStorage.getItem(K.ses);
+      if (s && users.some(u => u.username === s)) {
+        $('loginScreen').style.display = 'none';
+        $('app').style.display = 'block';
+        applyPerms(); refreshAll(); go('dashboard');
+      }
+
+      // 3. مزامنة ذكية تلقائية في الخلفية عند العودة للنافذة
+      window.addEventListener('focus', async () => {
+        if (typeof db_syncAll === 'function' && typeof SupabaseState !== 'undefined' && !SupabaseState.syncing) {
+          const synced = await db_syncAll();
+          if (synced) {
+            if (synced.projects) projects = synced.projects;
+            if (synced.moves) moves = synced.moves;
+            if (synced.expenses) expenses = synced.expenses;
+            if (synced.serviceTypes) serviceTypes = synced.serviceTypes;
+            refreshAll();
+          }
+        }
+      });
+
+      // 4. فحص دوري صامت كل دقيقة للتأكد من التزامن الدائم
+      setInterval(async () => {
+        if (typeof db_syncAll === 'function' && typeof SupabaseState !== 'undefined' && !SupabaseState.syncing) {
+          const synced = await db_syncAll();
+          if (synced) {
+            if (synced.projects) projects = synced.projects;
+            if (synced.moves) moves = synced.moves;
+            if (synced.expenses) expenses = synced.expenses;
+            if (synced.serviceTypes) serviceTypes = synced.serviceTypes;
+            refreshAll();
+          }
+        }
+      }, 60000);
+    })();
+  </script>
+
+</body>
+</html>
