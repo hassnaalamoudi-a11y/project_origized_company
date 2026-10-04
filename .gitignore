@@ -1,0 +1,7 @@
+node_modules/
+scratch_*
+temp_test.js
+.vscode/
+*.log
+.env
+.env.*
