@@ -2990,6 +2990,15 @@ CREATE POLICY "service_types_anon_all" ON public.service_types FOR ALL TO anon U
         applyPerms(); refreshAll(); go('dashboard');
       }
 
+      // منع تحديث/إغلاق الصفحة إذا كانت المزامنة قيد التنفيذ
+      window.addEventListener('beforeunload', (e) => {
+        if (typeof SupabaseState !== 'undefined' && SupabaseState.syncing) {
+          e.preventDefault();
+          e.returnValue = 'جاري حفظ البيانات في السحابة، هل أنت متأكد من المغادرة؟ قد تفقد آخر التعديلات.';
+          return e.returnValue;
+        }
+      });
+
       // 3. مزامنة ذكية تلقائية في الخلفية عند العودة للنافذة
       window.addEventListener('focus', async () => {
         if (typeof db_syncAll === 'function' && typeof SupabaseState !== 'undefined' && !SupabaseState.syncing) {

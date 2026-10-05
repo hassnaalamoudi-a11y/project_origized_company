@@ -759,13 +759,11 @@ async function db_syncAll() {
     const localExpenses = JSON.parse(localStorage.getItem('ps_exps_v1')     || '[]');
     const localUsers    = JSON.parse(localStorage.getItem('ps_users_v1')    || '[]');
 
-    // 1. دمج المشاريع بدون فقدان أي بيانات محلية أو سحابية
+    // 1. دمج المشاريع (الأولوية للبيانات المحلية في حال التعديل)
     const projectMap = new Map();
     (dbProjects || []).forEach(p => { if (p && p.id) projectMap.set(p.id, p); });
     (localProjects || []).forEach(p => {
-      if (p && p.id && !projectMap.has(p.id)) {
-        projectMap.set(p.id, p);
-      }
+      if (p && p.id) projectMap.set(p.id, p); // التعديل المحلي يطغى على السحابة
     });
     const finalProjects = Array.from(projectMap.values());
 
@@ -773,9 +771,7 @@ async function db_syncAll() {
     const moveMap = new Map();
     (dbMoves || []).forEach(m => { if (m && m.id) moveMap.set(m.id, m); });
     (localMoves || []).forEach(m => {
-      if (m && m.id && !moveMap.has(m.id)) {
-        moveMap.set(m.id, m);
-      }
+      if (m && m.id) moveMap.set(m.id, m);
     });
     const finalMoves = Array.from(moveMap.values());
 
@@ -783,20 +779,15 @@ async function db_syncAll() {
     const expMap = new Map();
     (dbExpenses || []).forEach(e => { if (e && e.id) expMap.set(e.id, e); });
     (localExpenses || []).forEach(e => {
-      if (e && e.id && !expMap.has(e.id)) {
-        expMap.set(e.id, e);
-      }
+      if (e && e.id) expMap.set(e.id, e);
     });
     const finalExpenses = Array.from(expMap.values());
 
     // 4. دمج المستخدمين
     const userMap = new Map();
-    (localUsers || []).forEach(u => { if (u && u.no !== undefined) userMap.set(Number(u.no), u); });
-    (dbUsers || []).forEach(u => {
-      if (u && u.no !== undefined) {
-        const existing = userMap.get(Number(u.no)) || {};
-        userMap.set(Number(u.no), { ...existing, ...u });
-      }
+    (dbUsers || []).forEach(u => { if (u && u.no !== undefined) userMap.set(Number(u.no), u); });
+    (localUsers || []).forEach(u => {
+      if (u && u.no !== undefined) userMap.set(Number(u.no), u);
     });
     const finalUsers = Array.from(userMap.values());
 
@@ -825,19 +816,14 @@ async function db_syncAll() {
     });
     const finalServiceTypes = Array.from(svcMap.values());
 
-    // 6. إذا كانت هناك بيانات محلية غير موجودة في Supabase، نرفعها فوراً
-    const needUploadProjects     = finalProjects.length > (dbProjects?.length || 0);
-    const needUploadMoves        = finalMoves.length > (dbMoves?.length || 0);
-    const needUploadExpenses     = finalExpenses.length > (dbExpenses?.length || 0);
-    const needUploadUsers        = finalUsers.length > (dbUsers?.length || 0);
-    const needUploadServiceTypes = finalServiceTypes.length > (dbServiceTypes?.length || 0);
-
+    // 6. إذا كانت هناك بيانات محلية، نرفعها فوراً لضمان عدم ضياع التعديلات
+    // نقوم بالرفع دائماً لضمان أن التعديلات المحلية (التي طغت على السحابة) تُحفظ في السحابة
     const uploads = [];
-    if (needUploadProjects && finalProjects.length)         uploads.push(db_upsertAllProjects(finalProjects));
-    if (needUploadMoves && finalMoves.length)               uploads.push(db_upsertAllMoves(finalMoves));
-    if (needUploadExpenses && finalExpenses.length)         uploads.push(db_upsertAllExpenses(finalExpenses));
-    if (needUploadUsers && finalUsers.length)               uploads.push(db_upsertAllUsers(finalUsers));
-    if (needUploadServiceTypes && finalServiceTypes.length) {
+    if (finalProjects.length)         uploads.push(db_upsertAllProjects(finalProjects));
+    if (finalMoves.length)            uploads.push(db_upsertAllMoves(finalMoves));
+    if (finalExpenses.length)         uploads.push(db_upsertAllExpenses(finalExpenses));
+    if (finalUsers.length)            uploads.push(db_upsertAllUsers(finalUsers));
+    if (finalServiceTypes.length) {
       uploads.push(db_upsertAllServiceTypes(finalServiceTypes).catch(err => {
         console.warn('تنبيه أثناء مزامنة أنواع الخدمات إلى Supabase:', err);
       }));
@@ -882,6 +868,7 @@ async function smartSave(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
 
   // 2. مزامنة مباشرة وتلقائية مع Supabase
+  SupabaseState.syncing = true;
   showSyncBadge('syncing');
   try {
     const sb = await initSupabase();
@@ -955,6 +942,8 @@ async function smartSave(key, value) {
     console.error('smartSave Supabase error:', e);
     showSyncBadge('offline');
     showSystemNotification('⚠️ تم الحفظ محلياً (حدث خطأ أثناء الرفع للسحابة)', 'warn');
+  } finally {
+    SupabaseState.syncing = false;
   }
 }
 
