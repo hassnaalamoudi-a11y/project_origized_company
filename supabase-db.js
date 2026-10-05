@@ -268,7 +268,7 @@ const ProjectMapper = {
     monthly:        Number(row.monthly || 0),
     collect:        row.collect || 'تحويل بنكي',
     status:         row.status || 'تحت العمل',
-    serviceType:    row.service_type || 'خدمة صيانة',
+    serviceType:    row.service_type || 'غير محدد',
   }),
 };
 
@@ -369,6 +369,45 @@ const UserMapper = {
 // API Functions — CRUD لكل الجداول
 // ================================================================
 
+/** جلب كل المستخدمين */
+async function db_getUsers() {
+  try {
+    const sb = await initSupabase();
+    if (!sb) return null;
+    const { data, error } = await sb.from('app_users').select('*').order('no', { ascending: true });
+    if (error) {
+      if (error.code === '42P01' || error.code === 'PGRST205') return null; // الجدول غير موجود
+      console.error('db_getUsers:', error);
+      return null;
+    }
+    return data ? data.map(UserMapper.fromDb) : [];
+  } catch (e) {
+    return null;
+  }
+}
+
+/** رفع كل المستخدمين دفعةً واحدة */
+async function db_upsertAllUsers(usersArr) {
+  try {
+    const sb = await initSupabase();
+    if (!sb) return false;
+    if (!usersArr || !usersArr.length) return true;
+    const { error } = await sb.from('app_users').upsert(usersArr.map(UserMapper.toDb), { onConflict: 'no' });
+    if (error) {
+      if (error.code === '42P01' || error.code === 'PGRST205') {
+        console.warn('⚠️ جدول app_users غير موجود في Supabase. يرجى إنشاؤه للحفاظ على التزامن.');
+        return false;
+      }
+      console.error('db_upsertAllUsers:', error);
+      throw error;
+    }
+    return true;
+  } catch (e) {
+    if (e?.code === 'PGRST205' || e?.code === '42P01') return false;
+    throw e;
+  }
+}
+
 /** جلب كل المشاريع */
 async function db_getProjects() {
   const sb = await initSupabase();
@@ -382,7 +421,14 @@ async function db_getProjects() {
 async function db_upsertProject(project) {
   const sb = await initSupabase();
   if (!sb) return false;
-  const { error } = await sb.from('projects').upsert(ProjectMapper.toDb(project), { onConflict: 'id' });
+  let payload = ProjectMapper.toDb(project);
+  let { error } = await sb.from('projects').upsert(payload, { onConflict: 'id' });
+  if (error && (error.code === 'PGRST204' || String(error.message || '').includes('service_type'))) {
+    console.warn('⚠️ عمود service_type غير موجود في جدول projects بسوبابيز، جاري الحفظ بدونه تلقائياً...');
+    delete payload.service_type;
+    const retry = await sb.from('projects').upsert(payload, { onConflict: 'id' });
+    error = retry.error;
+  }
   if (error) { console.error('db_upsertProject:', error); return false; }
   return true;
 }
@@ -404,7 +450,14 @@ async function db_upsertAllProjects(projects) {
     await sb.from('projects').delete().neq('id', '');
     return true;
   }
-  const { error } = await sb.from('projects').upsert(projects.map(ProjectMapper.toDb), { onConflict: 'id' });
+  let payload = projects.map(ProjectMapper.toDb);
+  let { error } = await sb.from('projects').upsert(payload, { onConflict: 'id' });
+  if (error && (error.code === 'PGRST204' || String(error.message || '').includes('service_type'))) {
+    console.warn('⚠️ عمود service_type غير موجود في جدول projects بسوبابيز، جاري الحفظ بدونه تلقائياً...');
+    payload.forEach(p => delete p.service_type);
+    const retry = await sb.from('projects').upsert(payload, { onConflict: 'id' });
+    error = retry.error;
+  }
   if (error) { console.error('db_upsertAllProjects:', error); throw error; }
   return true;
 }

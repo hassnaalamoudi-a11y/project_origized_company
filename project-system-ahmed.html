@@ -863,8 +863,11 @@
 
       <div
         style="margin-top:16px;padding-top:14px;border-top:1px dashed var(--border);font-size:12px;color:var(--muted);line-height:1.6">
-        💡 <b>خطوة مهمة:</b> تأكد من تشغيل كود <code>supabase-setup.sql</code> داخل <b>SQL Editor</b> في موقع Supabase
-        لإنشاء الجداول وحمايتها قبل الفحص.
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:8px">
+          <span>💡 <b>تحديث الجداول:</b> لتخزين نوع الخدمة في السحابة، شغّل كود التحديث في <b>SQL Editor</b> بسوبابيز:</span>
+          <button type="button" class="btn-s" style="padding:3px 10px;font-size:11.5px;white-space:nowrap" onclick="copySupabaseFixSql()">📋 نسخ كود SQL للتحديث</button>
+        </div>
+        <small style="color:var(--muted)">يقوم هذا الكود بإضافة عمود <code>service_type</code> وجدول أنواع الخدمات وتفعيل سياسات الأمان (RLS) تلقائياً.</small>
       </div>
     </div>
   </div>
@@ -1414,22 +1417,42 @@
       if (btn) btn.textContent = show ? '🙈' : '👁';
     }
     function checkLoginLink() {
-      const no = String($('loginNo').value || '').trim();
+      const n = ($('loginUser')?.value || '').trim();
+      const no = String($('loginNo')?.value || '').trim();
+      const err = $('loginErr');
+      if (!n && !no) { if (err) err.textContent = ''; return; }
+      
+      // إذا كُتب الاسم ولم يُكتب الرقم، يتم البحث بالاسم وملء الرقم تلقائياً
+      if (n && !no) {
+        const found = users.find(x => nameMatches(n, x.username));
+        if (found) {
+          $('loginNo').value = found.no;
+          if (err) err.textContent = '';
+          return;
+        }
+      }
+      
+      // إذا كُتب الرقم، نتأكد برفق
+      if (no !== '') {
+        const f = users.find(x => String(x.no) === no);
+        if (f && n && !nameMatches(n, f.username)) {
+          if (err) err.textContent = '💡 للتوضيح: الحساب المرتبط بهذا الرقم هو (' + f.username + ')';
+        } else if (err) {
+          err.textContent = '';
+        }
+      }
+    }
+
+    function fillLoginName() {
+      const no = String($('loginNo')?.value || '').trim();
       if (no === '') return;
       const f = users.find(x => String(x.no) === no);
-      const err = $('loginErr');
-      if (!f) { err.textContent = '❌ رقم المستخدم غير موجود'; return; }
-      const n = $('loginUser').value.trim();
-      if (n !== '' && !nameMatches(n, f.username)) err.textContent = '⚠️ الاسم لا يطابق رقم المستخدم — الصحيح: ' + f.username;
-      else err.textContent = '';
+      if (f) {
+        $('loginUser').value = f.username;
+        if ($('loginErr')) $('loginErr').textContent = '';
+      }
     }
-    function fillLoginName() {
-      const no = String($('loginNo').value || '').trim();
-      if (no === '') { return; }
-      const f = users.find(x => String(x.no) === no);
-      $('loginUser').value = f ? f.username : '';
-      checkLoginLink();
-    }
+
     function normAr(s) { return String(s || '').replace(/[\u064B-\u0652\u0640]/g, '').replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ؤ/g, 'و').replace(/ئ/g, 'ي').replace(/ة/g, 'ه').replace(/\s+/g, ' ').trim(); }
     function lev(a, b) {
       a = normAr(a).toLowerCase(); b = normAr(b).toLowerCase();
@@ -1443,21 +1466,79 @@
       return prev[n];
     }
     function nameMatches(typed, real) { const t = normAr(typed), r = normAr(real); return t === r || lev(t, r) <= 2; }
-    function login() {
-      const no = String($('loginNo').value || '').trim(), n = $('loginUser').value.trim(), p = $('loginPass').value;
+
+    async function login() {
+      const no = String($('loginNo')?.value || '').trim();
+      const n = ($('loginUser')?.value || '').trim();
+      const p = $('loginPass')?.value || '';
       const err = $('loginErr');
-      if (no === '') { err.textContent = '❌ أدخل رقم المستخدم'; return; }
-      if (!p) { err.textContent = '❌ أدخل كلمة المرور'; return; }
-      const f = users.find(x => String(x.no) === no);
-      if (!f) { err.textContent = '❌ رقم المستخدم غير موجود'; return; }
-      if (n !== '' && !nameMatches(n, f.username)) { err.textContent = '❌ رقم المستخدم لا يطابق اسم المستخدم — الاسم الصحيح: ' + f.username; return; }
-      $('loginUser').value = f.username;
-      if (f.password !== p) { err.textContent = '❌ اسم المستخدم أو كلمة المرور خطأ'; return; }
-      err.textContent = '';
+      const btn = document.querySelector('#loginScreen button:not(.eye-btn)');
+
+      if (!no && !n) { if (err) err.textContent = '❌ أدخل رقم المستخدم أو اسم المستخدم'; return; }
+      if (!p) { if (err) err.textContent = '❌ أدخل كلمة المرور'; return; }
+
+      if (err) err.textContent = '⏳ جاري التحقق من بيانات الدخول...';
+      if (btn) btn.disabled = true;
+
+      // 1. البحث عن المستخدم محلياً
+      let f = null;
+      if (no !== '') f = users.find(x => String(x.no) === no);
+      if (!f && n !== '') f = users.find(x => nameMatches(n, x.username));
+
+      // 2. إذا لم يُعثر عليه محلياً، نبحث فوراً في Supabase السحابية (مستخدم سجل من جهاز آخر)
+      if (!f && typeof db_getUsers === 'function') {
+        try {
+          const remoteUsers = await db_getUsers();
+          if (remoteUsers && remoteUsers.length) {
+            users = remoteUsers;
+            localStorage.setItem(K.users, JSON.stringify(users));
+            if (no !== '') f = users.find(x => String(x.no) === no);
+            if (!f && n !== '') f = users.find(x => nameMatches(n, x.username));
+          }
+        } catch (e) {
+          console.warn('تعذر فحص المستخدمين في السحابة:', e);
+        }
+      }
+
+      if (!f) {
+        if (btn) btn.disabled = false;
+        if (err) err.textContent = '❌ رقم أو اسم المستخدم غير موجود';
+        return;
+      }
+
+      // 3. التحقق من كلمة المرور
+      if (f.password !== p) {
+        if (btn) btn.disabled = false;
+        if (err) err.textContent = '❌ كلمة المرور غير صحيحة';
+        return;
+      }
+
+      // 4. تسجيل الدخول بنجاح وتحديث الحقول
+      if (err) err.textContent = '';
+      if ($('loginUser')) $('loginUser').value = f.username;
+      if ($('loginNo')) $('loginNo').value = f.no;
       localStorage.setItem(K.ses, f.username);
-      $('loginScreen').style.display = 'none'; $('app').style.display = 'block';
+      $('loginScreen').style.display = 'none';
+      $('app').style.display = 'block';
+      if (btn) btn.disabled = false;
+
       logOp('تسجيل دخول', 'رقم ' + f.no + ' — ' + f.username);
-      applyPerms(); refreshAll(); go('dashboard');
+      applyPerms();
+      refreshAll();
+      go('dashboard');
+
+      // 5. مزامنة سحابية فورية ومباشرة لجلب كل بيانات المشاريع والمستخلصات من الأجهزة الأخرى
+      if (typeof db_syncAll === 'function') {
+        db_syncAll().then(synced => {
+          if (synced) {
+            if (synced.projects) projects = synced.projects;
+            if (synced.moves) moves = synced.moves;
+            if (synced.expenses) expenses = synced.expenses;
+            if (synced.serviceTypes) serviceTypes = synced.serviceTypes;
+            refreshAll();
+          }
+        }).catch(() => {});
+      }
     }
     function logout() { localStorage.removeItem(K.ses); location.reload(); }
     /* ---- تغيير كلمة السر للحساب الحالي ---- */
@@ -2788,6 +2869,36 @@
         box.style.border = '1.5px solid var(--warning-border)';
         box.style.color = 'var(--warning-text)';
         box.innerHTML = '⚙️ <span>النظام يعمل في <b>الوضع المحلي</b> — أدخل رابط المشروع ومفتاح anon key لربط السحابة فوراً.</span>';
+      }
+    }
+    function copySupabaseFixSql() {
+      const sql = `-- كود تحديث وتجهيز الجداول لمؤسسة بايوني
+ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS service_type TEXT DEFAULT '';
+
+CREATE TABLE IF NOT EXISTS public.service_types (
+  id          TEXT PRIMARY KEY,
+  name        TEXT NOT NULL,
+  is_default  BOOLEAN DEFAULT FALSE,
+  sort_order  INTEGER DEFAULT 0,
+  created_at  TIMESTAMPTZ DEFAULT now(),
+  updated_at  TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "projects_anon_all" ON public.projects;
+CREATE POLICY "projects_anon_all" ON public.projects FOR ALL TO anon USING (true) WITH CHECK (true);
+
+ALTER TABLE public.service_types ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "service_types_anon_all" ON public.service_types;
+CREATE POLICY "service_types_anon_all" ON public.service_types FOR ALL TO anon USING (true) WITH CHECK (true);`;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(sql).then(() => {
+          alert('✅ تم نسخ كود SQL للحافظة بنجاح!\nالآن افتح Supabase -> SQL Editor، الصق الكود واضغط Run.');
+        }).catch(() => {
+          prompt('انسخ هذا الكود والصقه في SQL Editor في موقع Supabase:', sql);
+        });
+      } else {
+        prompt('انسخ هذا الكود والصقه في SQL Editor في موقع Supabase:', sql);
       }
     }
     async function saveAndConnectSupabase() {
