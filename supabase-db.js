@@ -759,85 +759,64 @@ async function db_syncAll() {
     const localExpenses = JSON.parse(localStorage.getItem('ps_exps_v1')     || '[]');
     const localUsers    = JSON.parse(localStorage.getItem('ps_users_v1')    || '[]');
 
-    // 1. دمج المشاريع (الأولوية للبيانات المحلية في حال التعديل)
-    const projectMap = new Map();
-    (dbProjects || []).forEach(p => { if (p && p.id) projectMap.set(p.id, p); });
-    (localProjects || []).forEach(p => {
-      if (p && p.id) projectMap.set(p.id, p); // التعديل المحلي يطغى على السحابة
-    });
-    const finalProjects = Array.from(projectMap.values());
+    // ================================================================
+    // القاعدة الجوهرية: Supabase هو مصدر الحقيقة الوحيد.
+    // عند التزامن، نأخذ البيانات من السحابة كاملة وهي التي تطغى.
+    // الاستثناء الوحيد: عناصر موجودة محلياً لكن غير موجودة في السحابة
+    // (تعني أنها أُضيفت وهناك انقطاع بالإنترنت ولم ترفع بعد — نرفعها).
+    // ================================================================
 
-    // 2. دمج الحركات / الفواتير
-    const moveMap = new Map();
-    (dbMoves || []).forEach(m => { if (m && m.id) moveMap.set(m.id, m); });
-    (localMoves || []).forEach(m => {
-      if (m && m.id) moveMap.set(m.id, m);
-    });
-    const finalMoves = Array.from(moveMap.values());
+    // 1. المشاريع: السحابة تطغى — فقط الإضافات المحلية الجديدة تُرفع
+    const dbProjectIds = new Set((dbProjects || []).map(p => p.id));
+    const localOnlyProjects = (localProjects || []).filter(p => p && p.id && !dbProjectIds.has(p.id));
+    const finalProjects = [...(dbProjects || []), ...localOnlyProjects];
 
-    // 3. دمج المصاريف
-    const expMap = new Map();
-    (dbExpenses || []).forEach(e => { if (e && e.id) expMap.set(e.id, e); });
-    (localExpenses || []).forEach(e => {
-      if (e && e.id) expMap.set(e.id, e);
-    });
-    const finalExpenses = Array.from(expMap.values());
+    // 2. الحركات: السحابة تطغى
+    const dbMoveIds = new Set((dbMoves || []).map(m => m.id));
+    const localOnlyMoves = (localMoves || []).filter(m => m && m.id && !dbMoveIds.has(m.id));
+    const finalMoves = [...(dbMoves || []), ...localOnlyMoves];
 
-    // 4. دمج المستخدمين
-    const userMap = new Map();
-    (dbUsers || []).forEach(u => { if (u && u.no !== undefined) userMap.set(Number(u.no), u); });
-    (localUsers || []).forEach(u => {
-      if (u && u.no !== undefined) userMap.set(Number(u.no), u);
-    });
-    const finalUsers = Array.from(userMap.values());
+    // 3. المصاريف: السحابة تطغى
+    const dbExpIds = new Set((dbExpenses || []).map(e => e.id));
+    const localOnlyExpenses = (localExpenses || []).filter(e => e && e.id && !dbExpIds.has(e.id));
+    const finalExpenses = [...(dbExpenses || []), ...localOnlyExpenses];
 
-    // 5. دمج أنواع الخدمات
+    // 4. المستخدمين: السحابة تطغى، المحلي يُستخدم للمستخدمين الجدد فقط
+    const dbUserNos = new Set((dbUsers || []).map(u => Number(u.no)));
+    const localOnlyUsers = (localUsers || []).filter(u => u && u.no !== undefined && !dbUserNos.has(Number(u.no)));
+    const finalUsers = [...(dbUsers || []), ...localOnlyUsers];
+
+    // 5. أنواع الخدمات
     const DEFAULT_SVC_TYPES = [
-      { id: 'svc_maintenance', name: 'خدمة صيانة', is_default: true, sort_order: 1, isDefault: true, sortOrder: 1 },
-      { id: 'svc_installation', name: 'خدمة تركيب', is_default: true, sort_order: 2, isDefault: true, sortOrder: 2 },
-      { id: 'svc_both', name: 'خدمة صيانة وتركيب', is_default: true, sort_order: 3, isDefault: true, sortOrder: 3 }
+      { id: 'svc_maintenance',  name: 'خدمة صيانة',        is_default: true, sort_order: 1, isDefault: true, sortOrder: 1 },
+      { id: 'svc_installation', name: 'خدمة تركيب',        is_default: true, sort_order: 2, isDefault: true, sortOrder: 2 },
+      { id: 'svc_both',         name: 'خدمة صيانة وتركيب', is_default: true, sort_order: 3, isDefault: true, sortOrder: 3 }
     ];
-    const localServiceTypes = JSON.parse(localStorage.getItem('ps_service_types_v1') || '[]');
     const svcMap = new Map();
     DEFAULT_SVC_TYPES.forEach(s => svcMap.set(s.id, s));
     (dbServiceTypes || []).forEach(s => {
       if (s && s.id) {
         if (s.name === 'خدمي صيانة') s.name = 'خدمة صيانة';
         if (s.name === 'خدمي تركيب') s.name = 'خدمة تركيب';
-        svcMap.set(s.id, { ...svcMap.get(s.id), ...s });
-      }
-    });
-    (localServiceTypes || []).forEach(s => {
-      if (s && s.id) {
-        if (s.name === 'خدمي صيانة') s.name = 'خدمة صيانة';
-        if (s.name === 'خدمي تركيب') s.name = 'خدمة تركيب';
-        svcMap.set(s.id, { ...svcMap.get(s.id), ...s });
+        svcMap.set(s.id, s);
       }
     });
     const finalServiceTypes = Array.from(svcMap.values());
 
-    // 6. إذا كانت هناك بيانات محلية، نرفعها فوراً لضمان عدم ضياع التعديلات
-    // نقوم بالرفع دائماً لضمان أن التعديلات المحلية (التي طغت على السحابة) تُحفظ في السحابة
+    // 6. رفع أي إضافات جديدة كانت محلية فقط (بسبب انقطاع الاتصال سابقاً)
     const uploads = [];
-    if (finalProjects.length)         uploads.push(db_upsertAllProjects(finalProjects));
-    if (finalMoves.length)            uploads.push(db_upsertAllMoves(finalMoves));
-    if (finalExpenses.length)         uploads.push(db_upsertAllExpenses(finalExpenses));
-    if (finalUsers.length)            uploads.push(db_upsertAllUsers(finalUsers));
-    if (finalServiceTypes.length) {
-      uploads.push(db_upsertAllServiceTypes(finalServiceTypes).catch(err => {
-        console.warn('تنبيه أثناء مزامنة أنواع الخدمات إلى Supabase:', err);
-      }));
-    }
-    if (uploads.length) {
-      await Promise.all(uploads);
-    }
+    if (localOnlyProjects.length)  uploads.push(db_upsertAllProjects(localOnlyProjects).catch(e => console.warn('upload local projects:', e)));
+    if (localOnlyMoves.length)     uploads.push(db_upsertAllMoves(localOnlyMoves).catch(e => console.warn('upload local moves:', e)));
+    if (localOnlyExpenses.length)  uploads.push(db_upsertAllExpenses(localOnlyExpenses).catch(e => console.warn('upload local expenses:', e)));
+    if (localOnlyUsers.length)     uploads.push(db_upsertAllUsers(localOnlyUsers).catch(e => console.warn('upload local users:', e)));
+    if (uploads.length) await Promise.all(uploads);
 
-    // 7. حفظ نهائي في localStorage
-    localStorage.setItem('ps_projects_v2',       JSON.stringify(finalProjects));
-    localStorage.setItem('ps_moves_v2',          JSON.stringify(finalMoves));
-    localStorage.setItem('ps_exps_v1',           JSON.stringify(finalExpenses));
-    localStorage.setItem('ps_users_v1',          JSON.stringify(finalUsers));
-    localStorage.setItem('ps_service_types_v1',  JSON.stringify(finalServiceTypes));
+    // 7. تحديث الكاش المحلي بالبيانات النهائية الصحيحة من السحابة
+    localStorage.setItem('ps_projects_v2',      JSON.stringify(finalProjects));
+    localStorage.setItem('ps_moves_v2',         JSON.stringify(finalMoves));
+    localStorage.setItem('ps_exps_v1',          JSON.stringify(finalExpenses));
+    localStorage.setItem('ps_users_v1',         JSON.stringify(finalUsers));
+    localStorage.setItem('ps_service_types_v1', JSON.stringify(finalServiceTypes));
 
     if (dbLog && dbLog.length)         localStorage.setItem('ps_log_v1',     JSON.stringify(dbLog));
     if (dbBackups && dbBackups.length) localStorage.setItem('ps_backups_v1', JSON.stringify(dbBackups));
