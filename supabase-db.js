@@ -760,33 +760,37 @@ async function db_syncAll() {
     const localUsers    = JSON.parse(localStorage.getItem('ps_users_v1')    || '[]');
 
     // ================================================================
-    // القاعدة الجوهرية: Supabase هو مصدر الحقيقة الوحيد.
-    // عند التزامن، نأخذ البيانات من السحابة كاملة وهي التي تطغى.
-    // الاستثناء الوحيد: عناصر موجودة محلياً لكن غير موجودة في السحابة
-    // (تعني أنها أُضيفت وهناك انقطاع بالإنترنت ولم ترفع بعد — نرفعها).
+    // القاعدة الجوهرية: Supabase هو مصدر الحقيقة الوحيد بالكامل.
+    // عند الاتصال بالسحابة، بيانات Supabase تطغى وتحل محل التخزين المحلي.
+    // الحذف والتعديل والإضافة في Supabase تكون نهائية ومستمرة بعد الـ Refresh.
     // ================================================================
 
-    // 1. المشاريع: السحابة تطغى — فقط الإضافات المحلية الجديدة تُرفع
-    const dbProjectIds = new Set((dbProjects || []).map(p => p.id));
-    const localOnlyProjects = (localProjects || []).filter(p => p && p.id && !dbProjectIds.has(p.id));
-    const finalProjects = [...(dbProjects || []), ...localOnlyProjects];
+    const isSeeded = localStorage.getItem('ps_supabase_seeded') === 'true';
+    let finalProjects, finalMoves, finalExpenses, finalUsers;
 
-    // 2. الحركات: السحابة تطغى
-    const dbMoveIds = new Set((dbMoves || []).map(m => m.id));
-    const localOnlyMoves = (localMoves || []).filter(m => m && m.id && !dbMoveIds.has(m.id));
-    const finalMoves = [...(dbMoves || []), ...localOnlyMoves];
+    // حالة خاصة جداً: أول مرة على الإطلاق يتم ربط قاعدة بيانات جديدة وفارغة وبها بيانات محلياً
+    if (!isSeeded && dbProjects && dbProjects.length === 0 && localProjects.length > 0) {
+      console.log('🌱 رفع البيانات المحلية إلى Supabase للمرة الأولى فقط...');
+      await Promise.all([
+        localProjects.length ? db_upsertAllProjects(localProjects).catch(e => console.warn('seed projects error:', e)) : null,
+        localMoves.length ? db_upsertAllMoves(localMoves).catch(e => console.warn('seed moves error:', e)) : null,
+        localExpenses.length ? db_upsertAllExpenses(localExpenses).catch(e => console.warn('seed expenses error:', e)) : null,
+        localUsers.length ? db_upsertAllUsers(localUsers).catch(e => console.warn('seed users error:', e)) : null,
+      ]);
+      localStorage.setItem('ps_supabase_seeded', 'true');
+      finalProjects = localProjects;
+      finalMoves = localMoves;
+      finalExpenses = localExpenses;
+      finalUsers = localUsers;
+    } else {
+      localStorage.setItem('ps_supabase_seeded', 'true');
+      finalProjects = dbProjects !== null ? dbProjects : localProjects;
+      finalMoves    = dbMoves !== null ? dbMoves : localMoves;
+      finalExpenses = dbExpenses !== null ? dbExpenses : localExpenses;
+      finalUsers    = (dbUsers && dbUsers.length > 0) ? dbUsers : localUsers;
+    }
 
-    // 3. المصاريف: السحابة تطغى
-    const dbExpIds = new Set((dbExpenses || []).map(e => e.id));
-    const localOnlyExpenses = (localExpenses || []).filter(e => e && e.id && !dbExpIds.has(e.id));
-    const finalExpenses = [...(dbExpenses || []), ...localOnlyExpenses];
-
-    // 4. المستخدمين: السحابة تطغى، المحلي يُستخدم للمستخدمين الجدد فقط
-    const dbUserNos = new Set((dbUsers || []).map(u => Number(u.no)));
-    const localOnlyUsers = (localUsers || []).filter(u => u && u.no !== undefined && !dbUserNos.has(Number(u.no)));
-    const finalUsers = [...(dbUsers || []), ...localOnlyUsers];
-
-    // 5. أنواع الخدمات
+    // 5. أنواع الخدمات (دمج الافتراضية مع ما في السحابة)
     const DEFAULT_SVC_TYPES = [
       { id: 'svc_maintenance',  name: 'خدمة صيانة',        is_default: true, sort_order: 1, isDefault: true, sortOrder: 1 },
       { id: 'svc_installation', name: 'خدمة تركيب',        is_default: true, sort_order: 2, isDefault: true, sortOrder: 2 },
@@ -803,15 +807,7 @@ async function db_syncAll() {
     });
     const finalServiceTypes = Array.from(svcMap.values());
 
-    // 6. رفع أي إضافات جديدة كانت محلية فقط (بسبب انقطاع الاتصال سابقاً)
-    const uploads = [];
-    if (localOnlyProjects.length)  uploads.push(db_upsertAllProjects(localOnlyProjects).catch(e => console.warn('upload local projects:', e)));
-    if (localOnlyMoves.length)     uploads.push(db_upsertAllMoves(localOnlyMoves).catch(e => console.warn('upload local moves:', e)));
-    if (localOnlyExpenses.length)  uploads.push(db_upsertAllExpenses(localOnlyExpenses).catch(e => console.warn('upload local expenses:', e)));
-    if (localOnlyUsers.length)     uploads.push(db_upsertAllUsers(localOnlyUsers).catch(e => console.warn('upload local users:', e)));
-    if (uploads.length) await Promise.all(uploads);
-
-    // 7. تحديث الكاش المحلي بالبيانات النهائية الصحيحة من السحابة
+    // 6. تحديث التخزين المحلي بالبيانات الدقيقة من السحابة
     localStorage.setItem('ps_projects_v2',      JSON.stringify(finalProjects));
     localStorage.setItem('ps_moves_v2',         JSON.stringify(finalMoves));
     localStorage.setItem('ps_exps_v1',          JSON.stringify(finalExpenses));
